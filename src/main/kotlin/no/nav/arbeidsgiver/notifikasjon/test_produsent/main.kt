@@ -11,7 +11,7 @@ fun main() {
     val log = LoggerFactory.getLogger("main")
     log.info("hello world")
 
-    embeddedServer(Netty, port = 8000) {
+    embeddedServer(Netty, port = 8080) {
         routing {
             get("ok") {
                 call.respondText("i'm ok")
