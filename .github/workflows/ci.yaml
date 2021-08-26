@@ -1,0 +1,33 @@
+name: ci
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-java@v1
+        with:
+          java-version: '15.x'
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+      - run: mvn -B package
+      - name: Build container image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.GHCR_PUSH_USERNAME }}
+          password: ${{ secrets.GHCR_PUSH_TOKEN }}
+          registry: ghcr.io
+          repository: ${{ github.repository }}
+          tag_with_sha: true
+      - uses: nais/deploy/actions/deploy@v1
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: dev-gcp
+          RESOURCE: nais-application.yaml

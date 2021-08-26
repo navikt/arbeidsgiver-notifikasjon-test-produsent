@@ -1,0 +1,25 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: notifikasjon-test-produsent
+  namespace: fager
+  labels:
+    team: fager
+spec:
+  image: {{image}}
+  ingresses:
+    - https://arbeidsgiver-notifikasjon-test-produsent.dev.nav.no/
+  liveness:
+    path: /ok
+  readiness:
+    path: /ok
+  replicas:
+    min: 1
+    max: 1
+  prometheus:
+    enabled: false
+  accessPolicy:
+    outbound:
+      rules:
+        - application: notifikasjon-produsent-api
+
