@@ -30,22 +30,26 @@ fun main() {
             }
 
             get("doStuff") {
-                log.info("doing stuff")
+                try {
+                    log.info("doing stuff")
 
-                val accessToken = client.submitForm<String>(
-                    url = tokenEndpoint,
-                    formParameters = Parameters.build {
-                        append("tenant", tenantId)
-                        append("client_id", clientId)
-                        append("scope", "api://dev-gcp.fager.notifikasjon-produsent-api/.default\n")
-                        append("client_secret", clientSecret)
-                        append("grant_type", "client_credentials")
+                    val accessToken = client.submitForm<String>(
+                        url = tokenEndpoint,
+                        formParameters = Parameters.build {
+                            append("tenant", tenantId)
+                            append("client_id", clientId)
+                            append("scope", "api://dev-gcp.fager.notifikasjon-produsent-api/.default\n")
+                            append("client_secret", clientSecret)
+                            append("grant_type", "client_credentials")
+                        }
+                    ) {
+                        method = HttpMethod.Post
                     }
-                ) {
-                    method = HttpMethod.Post
+                    call.respondText(accessToken)
+                } catch (e: RuntimeException) {
+                    log.error(":'(", e)
+                    call.respond(HttpStatusCode.InternalServerError)
                 }
-
-                call.respondText(accessToken)
             }
         }
     }.start(wait = true)
