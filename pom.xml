@@ -131,7 +131,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>no.nav.arbeidsgiver.notifikasjon.MainKt</mainClass>
+                            <mainClass>no.nav.arbeidsgiver.notifikasjon.test_produsent.MainKt</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
