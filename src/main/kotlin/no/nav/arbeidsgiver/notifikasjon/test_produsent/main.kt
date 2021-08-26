@@ -1,3 +1,4 @@
+package no.nav.arbeidsgiver.notifikasjon.test_produsent
 import io.ktor.application.*
 import io.ktor.response.*
 import io.ktor.routing.*
