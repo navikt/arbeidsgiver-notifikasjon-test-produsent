@@ -24,7 +24,7 @@ jobs:
           password: ${{ secrets.GHCR_PUSH_TOKEN }}
           registry: ghcr.io
           repository: ${{ github.repository }}
-          tag: ${{ github.sha }}
+          tags: ${{ github.sha }}
       - uses: nais/deploy/actions/deploy@v1
         env:
           IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
