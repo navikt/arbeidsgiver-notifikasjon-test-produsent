@@ -63,7 +63,7 @@ fun main() {
                     }
                     val map: Map<String, Any> = objectMapper.readValue(accessTokenResponse)
                     val accessToken = map["access_token"]
-                    val response: HttpResponse = client.post("http://notifikasjon-produsent-api/api/graphql") {
+                    val response: String = client.post("http://notifikasjon-produsent-api/api/graphql") {
                         headers {
                             append(HttpHeaders.Authorization, "Bearer $accessToken")
                             append(HttpHeaders.ContentType, "application/json")
@@ -103,7 +103,7 @@ fun main() {
                         )
                     }
 
-                    call.respond(response.content)
+                    call.respond(response)
                 } catch (e: RuntimeException) {
                     log.error(":'(", e)
                     call.respond(HttpStatusCode.InternalServerError)
