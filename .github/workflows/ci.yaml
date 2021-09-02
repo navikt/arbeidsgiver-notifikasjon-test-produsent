@@ -25,9 +25,17 @@ jobs:
           registry: ghcr.io
           repository: ${{ github.repository }}
           tags: ${{ github.sha }}
+
       - uses: nais/deploy/actions/deploy@v1
         env:
           IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-gcp
+          RESOURCE: nais-application.yaml
+
+      - uses: nais/deploy/actions/deploy@v1
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: prod-gcp
           RESOURCE: nais-application.yaml
