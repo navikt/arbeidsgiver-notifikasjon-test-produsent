@@ -47,8 +47,8 @@ fun main() {
                             append("tenant", tenantId)
                             append("client_id", clientId)
                             append("scope", basedOnEnv(
-                                prod = "api://prod-gcp.fager.notifikasjon-produsent-api/.default",
-                                other = "api://dev-gcp.fager.notifikasjon-produsent-api/.default"
+                                prod = "api://prod-gcp.fager.notifikasjon-produsent-api/.default\n",
+                                other = "api://dev-gcp.fager.notifikasjon-produsent-api/.default\n"
                             ))
                             append("client_secret", clientSecret)
                             append("grant_type", "client_credentials")
