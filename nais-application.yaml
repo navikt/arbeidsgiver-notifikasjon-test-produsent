@@ -7,8 +7,6 @@ metadata:
     team: fager
 spec:
   image: {{image}}
-  ingresses:
-    - https://arbeidsgiver-notifikasjon-test-produsent.dev.nav.no/
   liveness:
     path: /ok
   readiness:
