@@ -103,7 +103,7 @@ fun main() {
                         )
                     }
 
-                    call.respond(response)
+                    call.respond(response.content)
                 } catch (e: RuntimeException) {
                     log.error(":'(", e)
                     call.respond(HttpStatusCode.InternalServerError)
