@@ -1,5 +1,7 @@
 package no.nav.arbeidsgiver.notifikasjon.test_produsent
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.application.*
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
@@ -41,14 +43,14 @@ fun main() {
                 try {
                     log.info("doing stuff")
 
-                    val accessToken = client.submitForm<String>(
+                    val accessTokenResponse = client.submitForm<String>(
                         url = tokenEndpoint,
                         formParameters = Parameters.build {
                             append("tenant", tenantId)
                             append("client_id", clientId)
                             append("scope", basedOnEnv(
-                                prod = "api://prod-gcp.fager.notifikasjon-produsent-api/.default\n",
-                                other = "api://dev-gcp.fager.notifikasjon-produsent-api/.default\n"
+                                prod = "api://prod-gcp.fager.notifikasjon-produsent-api/.default",
+                                other = "api://dev-gcp.fager.notifikasjon-produsent-api/.default"
                             ))
                             append("client_secret", clientSecret)
                             append("grant_type", "client_credentials")
@@ -56,7 +58,8 @@ fun main() {
                     ) {
                         method = HttpMethod.Post
                     }
-
+                    val map : Map<String, Any> = jacksonObjectMapper().readValue(accessTokenResponse)
+                    val accessToken = map["access_token"]
                     val response: HttpResponse = client.post("http://notifikasjon-produsent-api/api/graphql") {
                         headers {
                             append(HttpHeaders.Authorization, "Bearer $accessToken")
