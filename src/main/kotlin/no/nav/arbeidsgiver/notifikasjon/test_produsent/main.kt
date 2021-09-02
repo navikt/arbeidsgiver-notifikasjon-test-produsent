@@ -70,34 +70,17 @@ fun main() {
                         }
                         body = objectMapper.writeValueAsString(
                             mapOf(
-                                "query" to """
-                                    mutation {
-                                        nyBeskjed(nyBeskjed: {
-                                            mottaker: {
-                                                altinn: {
-                                                    serviceCode: "4936",
-                                                    serviceEdition: "1"
-                                                    virksomhetsnummer: "922658986"
-                                                } 
-                                            }
-                                            notifikasjon: {
-                                                lenke: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                                                tekst: "Notifikasjoner er nå i prod! 3 x Hipp, hurra 🎉"
-                                                merkelapp: "fager"
-                                            }
-                                            metadata: {
-                                                eksternId: "${UUID.randomUUID()}"
-                                            }
-                                        }) {
-                                            ... on NyBeskjedVellykket {
-                                                id
-                                            }
-                                            ... on Error {
-                                                feilmelding
-                                            }
-                                        }
-                                    }"""
-                                    .trimIndent()
+                                "query" to
+        """
+            mutation {
+                softDeleteNotifikasjon(id: "dacc5fad-0aaa-4602-8360-4fdcd58f78fd") {
+                    __typename
+                    ... on Error {
+                        feilmelding
+                    }
+                }
+            }
+        """
                             )
                         )
                     }
