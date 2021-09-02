@@ -16,12 +16,13 @@ import io.ktor.server.netty.*
 import org.slf4j.LoggerFactory
 import java.util.*
 
-fun <T>basedOnEnv(prod: T, other: T): T =
+fun <T> basedOnEnv(prod: T, other: T): T =
     when (System.getenv("NAIS_CLUSTER_NAME")) {
         "prod-gcp" -> prod
         else -> other
     }
 
+val objectMapper = jacksonObjectMapper()
 fun main() {
     val log = LoggerFactory.getLogger("main")
     log.info("hello world")
@@ -48,17 +49,19 @@ fun main() {
                         formParameters = Parameters.build {
                             append("tenant", tenantId)
                             append("client_id", clientId)
-                            append("scope", basedOnEnv(
-                                prod = "api://prod-gcp.fager.notifikasjon-produsent-api/.default",
-                                other = "api://dev-gcp.fager.notifikasjon-produsent-api/.default"
-                            ))
+                            append(
+                                "scope", basedOnEnv(
+                                    prod = "api://prod-gcp.fager.notifikasjon-produsent-api/.default",
+                                    other = "api://dev-gcp.fager.notifikasjon-produsent-api/.default"
+                                )
+                            )
                             append("client_secret", clientSecret)
                             append("grant_type", "client_credentials")
                         }
                     ) {
                         method = HttpMethod.Post
                     }
-                    val map : Map<String, Any> = jacksonObjectMapper().readValue(accessTokenResponse)
+                    val map: Map<String, Any> = objectMapper.readValue(accessTokenResponse)
                     val accessToken = map["access_token"]
                     val response: HttpResponse = client.post("http://notifikasjon-produsent-api/api/graphql") {
                         headers {
@@ -66,34 +69,38 @@ fun main() {
                             append(HttpHeaders.ContentType, "application/json")
                             append(HttpHeaders.Accept, "application/json")
                         }
-                        body = """
-                            mutation {
-                                nyBeskjed(nyBeskjed: {
-                                    mottaker: {
-                                        altinn: {
-                                            serviceCode: "4936",
-                                            serviceEdition: "1"
-                                            virksomhetsnummer: "922658986"
-                                        } 
-                                    }
-                                    notifikasjon: {
-                                        lenke: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                                        tekst: "Notifikasjoner er nå i prod! 3 x Hipp, hurra 🎉"
-                                        merkelapp: "fager"
-                                    }
-                                    metadata: {
-                                        eksternId: "${UUID.randomUUID()}"
-                                    }
-                                }) {
-                                    ... on NyBeskjedVellykket {
-                                        id
-                                    }
-                                    ... on Error {
-                                        feilmelding
-                                    }
-                                }
-                            }
-                        """.trimIndent()
+                        body = objectMapper.writeValueAsString(
+                            mapOf(
+                                "query" to """
+                                    mutation {
+                                        nyBeskjed(nyBeskjed: {
+                                            mottaker: {
+                                                altinn: {
+                                                    serviceCode: "4936",
+                                                    serviceEdition: "1"
+                                                    virksomhetsnummer: "922658986"
+                                                } 
+                                            }
+                                            notifikasjon: {
+                                                lenke: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                                                tekst: "Notifikasjoner er nå i prod! 3 x Hipp, hurra 🎉"
+                                                merkelapp: "fager"
+                                            }
+                                            metadata: {
+                                                eksternId: "${UUID.randomUUID()}"
+                                            }
+                                        }) {
+                                            ... on NyBeskjedVellykket {
+                                                id
+                                            }
+                                            ... on Error {
+                                                feilmelding
+                                            }
+                                        }
+                                    }"""
+                                    .trimIndent()
+                            )
+                        )
                     }
 
                     call.respond(response)
