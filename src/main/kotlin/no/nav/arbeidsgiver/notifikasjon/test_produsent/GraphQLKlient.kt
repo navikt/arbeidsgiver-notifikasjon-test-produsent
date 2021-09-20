@@ -31,32 +31,44 @@ class GraphQLKlient(
     suspend fun opprettBeskjed() {
         execute(mapOf(
             "query" to """
-                        mutation {
-                            nyBeskjed(nyBeskjed: {
-                                mottaker: {
-                                    altinn: {
-                                        serviceCode: "4936",
-                                        serviceEdition: "1"
-                                        virksomhetsnummer: "922658986"
-                                    } 
-                                }
-                                notifikasjon: {
-                                    lenke: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                                    tekst: "Epic lol 🎉"
-                                    merkelapp: "fager"
-                                }
-                                metadata: {
-                                    eksternId: "${UUID.randomUUID()}"
-                                }
-                            }) {
-                                ... on NyBeskjedVellykket {
-                                    id
-                                }
-                                ... on Error {
-                                    feilmelding
-                                }
+                        mutation OpprettNyBeskjed(
+                          ${'$'}eksternId: String!
+                          ${'$'}virksomhetsnummer: String!
+                          ${'$'}lenke: String!
+                        ) {
+                          nyBeskjed(nyBeskjed: {
+                            metadata: {
+                              eksternId: ${'$'}eksternId
                             }
-                        }""".trimIndent()
+                            mottaker: {
+                              altinn: {
+                                serviceCode: "1234"
+                                serviceEdition: "1"
+                                virksomhetsnummer: ${'$'}virksomhetsnummer
+                              }
+                            }
+                            notifikasjon: {
+                              merkelapp: "EtSakssystem"
+                              tekst: "Du har fått svar på din søknad"
+                              lenke: ${'$'}lenke
+                            }
+                          }) {
+                            __typename
+                            ... on NyBeskjedVellykket {
+                              id
+                            }
+                            ... on Error {
+                              feilmelding
+                            }
+                          }
+                        }""".trimIndent(),
+            "variables" to """
+                {
+                  "eksternId": "1234-oppdatering",
+                  "virksomhetsnummer": "012345678",
+                  "lenke": "https://dev.nav.no/sakssystem/?sak=1234"
+                }
+            """.trimIndent()
         ))
     }
 
