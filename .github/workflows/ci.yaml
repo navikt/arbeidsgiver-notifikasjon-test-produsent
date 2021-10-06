@@ -26,7 +26,6 @@ jobs:
       - name: Build container image
         uses: docker/build-push-action@v2
         with:
-          context: app
           push: true
           tags: |
             ghcr.io/${{ github.repository }}/arbeidsgiver-notifikasjon-test-produsent:${{ github.sha }}
