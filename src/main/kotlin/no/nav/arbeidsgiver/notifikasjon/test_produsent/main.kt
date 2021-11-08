@@ -8,89 +8,223 @@ import io.ktor.client.engine.apache.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
+import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import org.slf4j.LoggerFactory
-import java.util.*
-
-fun <T> basedOnEnv(prod: T, other: T): T =
-    when (System.getenv("NAIS_CLUSTER_NAME")) {
-        "prod-gcp" -> prod
-        else -> other
-    }
 
 val objectMapper = jacksonObjectMapper()
+
+val httpClient = HttpClient(Apache)
+
 fun main() {
     val log = LoggerFactory.getLogger("main")
-    log.info("hello world")
-
-    val client = HttpClient(Apache)
-    val tokenEndpoint = System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT")!!
-    val tenantId = System.getenv("AZURE_APP_TENANT_ID")!!
-    val clientId = System.getenv("AZURE_APP_CLIENT_ID")!!
-    val clientSecret = System.getenv("AZURE_APP_CLIENT_SECRET")!!
-
 
     embeddedServer(Netty, port = 8080) {
         routing {
             get("ok") {
-                call.respondText("i'm ok")
+                call.respond("ok")
             }
 
-            get("doStuff") {
+            get {
+                log.info("hello, stranger")
+
+                call.respondText(
+                    text = sendPage,
+                    contentType = ContentType.Text.Html
+                )
+            }
+
+            post("/submit") {
                 try {
-                    log.info("doing stuff")
+                    val formParameters = call.receiveParameters()
+                    val vnr = formParameters["vnr"].toString()
+                    val tekst = formParameters["tekst"].toString()
+                    val url = formParameters["url"].toString()
+                    val type = formParameters["type"].toString()
 
-                    val accessTokenResponse = client.submitForm<String>(
-                        url = tokenEndpoint,
-                        formParameters = Parameters.build {
-                            append("tenant", tenantId)
-                            append("client_id", clientId)
-                            append(
-                                "scope", basedOnEnv(
-                                    prod = "api://prod-gcp.fager.notifikasjon-produsent-api/.default",
-                                    other = "api://dev-gcp.fager.notifikasjon-produsent-api/.default"
-                                )
-                            )
-                            append("client_secret", clientSecret)
-                            append("grant_type", "client_credentials")
-                        }
-                    ) {
-                        method = HttpMethod.Post
-                    }
-                    val map: Map<String, Any> = objectMapper.readValue(accessTokenResponse)
-                    val accessToken = map["access_token"]
-                    val response: String = client.post("http://notifikasjon-produsent-api/api/graphql") {
-                        headers {
-                            append(HttpHeaders.Authorization, "Bearer $accessToken")
-                            append(HttpHeaders.ContentType, "application/json")
-                            append(HttpHeaders.Accept, "application/json")
-                        }
-                        body = objectMapper.writeValueAsString(
-                            mapOf(
-                                "query" to
-        """
-            mutation {
-                softDeleteNotifikasjon(id: "dacc5fad-0aaa-4602-8360-4fdcd58f78fd") {
-                    __typename
-                    ... on Error {
-                        feilmelding
-                    }
-                }
-            }
-        """
-                            )
-                        )
-                    }
+                    log.info("trying to send test notification: '$vnr' '$tekst' '$url' '$type'")
+                    val utfall = sendNotifikasjon(vnr, tekst, url, type)
 
-                    call.respond(response)
-                } catch (e: RuntimeException) {
-                    log.error(":'(", e)
-                    call.respond(HttpStatusCode.InternalServerError)
+                    call.respondText(
+                        text = okPage(objectMapper.writeValueAsString(utfall)),
+                        contentType = ContentType.Text.Html
+                    )
+                } catch (e: Exception) {
+                    log.error("unexpected exception", e)
+                    call.respondText("exception :( see logs")
                 }
             }
         }
     }.start(wait = true)
 }
+
+suspend fun sendNotifikasjon(vnr: String, tekst: String, url: String, type: String): Any {
+    val variables = mapOf(
+        "vnr" to vnr,
+        "tekst" to tekst,
+        "url" to url,
+    )
+    return when (type) {
+        "beskjed" -> executeGraphql(nyBeskjed, variables)
+        "oppgave" -> executeGraphql(nyOppgave, variables)
+        else -> "ukjent type '$type' :("
+    }
+}
+
+suspend fun executeGraphql(query: String, variables: Map<String, String>): Any {
+    val accessToken = getAccessToken()
+    return httpClient.post("http://notifikasjon-produsent-api/api/graphql") {
+        header(HttpHeaders.Authorization, "Bearer $accessToken")
+        header(HttpHeaders.ContentType, "application/json")
+        header(HttpHeaders.Accept, "application/json")
+        body = objectMapper.writeValueAsString(
+            mapOf(
+                "query" to query,
+                "variables" to variables,
+            )
+        )
+    }
+}
+
+suspend fun getAccessToken(): String {
+    return "ok"
+    val tokenEndpoint = System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT")!!
+    val tenantId = System.getenv("AZURE_APP_TENANT_ID")!!
+    val clientId = System.getenv("AZURE_APP_CLIENT_ID")!!
+    val clientSecret = System.getenv("AZURE_APP_CLIENT_SECRET")!!
+
+    val accessTokenResponse = httpClient.submitForm<String>(
+        url = tokenEndpoint,
+        formParameters = Parameters.build {
+            set("tenant", tenantId)
+            set("client_id", clientId)
+            set( "scope" , "api://dev-gcp.fager.notifikasjon-produsent-api/.default")
+            set("client_secret", clientSecret)
+            set("grant_type", "client_credentials")
+        }
+    ) {
+        method = HttpMethod.Post
+    }
+    val map: Map<String, Any> = objectMapper.readValue(accessTokenResponse)
+    return map["access_token"] as String
+}
+
+// language=HTML
+const val sendPage: String =
+    """
+        <html>
+            <head>
+                <title>Test produsent</title>
+            </head>
+            <body>
+                <form method="post" action="/submit">
+                    <label for="vnr">Virksomhetsnummer:</label>
+                    <input id="vnr" name="vnr" type="text" value="910825631"><br>
+                    
+                    <label for="tekst">Tekst:</label>
+                    <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
+                    
+                    <label for="url">url:</label>
+                    <input id="url" name="url" type="text" value="https://dev.nav.no"><br>
+                    
+                    
+                    Notifikasjonstype:<br>
+                    <input type="radio" id="beskjed" name="type" value="beskjed" checked>
+                    <label for="beskjed">beskjed</label><br>
+                    <input type="radio" id="oppgave" name="type" value="oppgave">
+                    <label for="oppgave">oppgave</label><br>
+                    <input type="submit" value="send">
+                </form>
+            </body>
+        </html>
+    """
+
+fun okPage(utfall: String): String =
+    // language=HTML
+    """
+        <html>
+            <head>
+                <title>Notifikasjon forsøkt sendt</title>
+            </head>
+            <body>
+                <h1>Notifikasjon send</h1>
+                $utfall
+                <br>
+                <a href="..">gå tilbake</a>
+            </body>
+        </html>
+        
+    """
+
+val nyOppgave: String =
+    // language=GraphQL
+    """
+        mutation NyOppgave(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String) {
+            nyOppgave(
+                nyOppgave: {
+                    metadata: {
+                        eksternId: ${java.util.UUID.randomUUID()}
+                    }
+                    mottaker: {
+                        altinn: {
+                            serviceCode: "4936"
+                            serviceEdition: "1"
+                            virksomhetsnummer: ${'$'}vnr
+                        }
+                    }
+                    notifikasjon: {
+                        merkelapp: "fager"
+                        tekst: ${'$'}tekst
+                        lenke: ${'$'}url
+                    } 
+                }
+            ) {
+                __typename
+                ... on NyOppgaveVellykket {
+                    id
+                }
+                ... on Error {
+                    feilmelding
+                }
+            }
+        }
+    """
+
+
+val nyBeskjed: String =
+    // language=GraphQL
+    """
+        mutation NyBeskjed(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String) {
+            nyBeskjed(
+                nyBeskjed: {
+                    metadata: {
+                        eksternId: ${java.util.UUID.randomUUID()}
+                    }
+                    mottaker: {
+                        altinn: {
+                            serviceCode: "4936"
+                            serviceEdition: "1"
+                            virksomhetsnummer: ${'$'}vnr
+                        }
+                    }
+                    notifikasjon: {
+                        merkelapp: "fager"
+                        tekst: ${'$'}tekst
+                        lenke: ${'$'}url
+                    } 
+                }
+            ) {
+                __typename
+                ... on NyBeskjedVellykket {
+                    id
+                }
+                ... on Error {
+                    feilmelding
+                }
+            }
+        }
+    """
+
