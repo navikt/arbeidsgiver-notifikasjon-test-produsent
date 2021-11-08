@@ -130,6 +130,8 @@ const val sendPage: String =
                 <title>Test produsent</title>
             </head>
             <body>
+                 Mottakere: altinn-tjenesten Inntektsmelding (service code "4936", edition "1") <br>
+                 
                 <form method="post" action="/submit">
                     <label for="vnr">Virksomhetsnummer:</label>
                     <input id="vnr" name="vnr" type="text" value="910825526"><br>
