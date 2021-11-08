@@ -90,7 +90,6 @@ suspend fun executeGraphql(query: String, variables: Map<String, String>): Any {
 }
 
 suspend fun getAccessToken(): String {
-    return "ok"
     val tokenEndpoint = System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT")!!
     val tenantId = System.getenv("AZURE_APP_TENANT_ID")!!
     val clientId = System.getenv("AZURE_APP_CLIENT_ID")!!
