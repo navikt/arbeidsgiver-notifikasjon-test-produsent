@@ -56,9 +56,7 @@ fun main() {
                     log.info("trying to send test notification: '$vnr' '$tekst' '$url' '$type'")
                     val utfall = sendNotifikasjon(vnr, tekst, url, type)
 
-                    call.respondHtml(
-                        okPage(objectMapper.writeValueAsString(utfall))
-                    )
+                    call.respondHtml(okPage(utfall))
                 } catch (e: Exception) {
                     log.error("unexpected exception", e)
                     call.respondHtml(errorPage)
@@ -95,9 +93,11 @@ suspend fun executeGraphql(query: String, variables: Map<String, String>): Any {
         )
     }
 
-    return mapOf(
-        "status" to response.status,
-        "body" to response.readText(),
+    return objectMapper.writeValueAsString(
+        mapOf(
+            "status" to response.status,
+            "body" to response.readText(),
+        )
     )
 }
 
