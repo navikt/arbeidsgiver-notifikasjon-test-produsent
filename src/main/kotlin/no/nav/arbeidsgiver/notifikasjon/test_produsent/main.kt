@@ -72,8 +72,8 @@ suspend fun sendNotifikasjon(vnr: String, tekst: String, url: String, type: Stri
         "url" to url,
     )
     return when (type) {
-        "beskjed" -> executeGraphql(nyBeskjed, variables)
-        "oppgave" -> executeGraphql(nyOppgave, variables)
+        "beskjed" -> executeGraphql(nyBeskjed(), variables)
+        "oppgave" -> executeGraphql(nyOppgave(), variables)
         else -> "ukjent type '$type' :("
     }
 }
@@ -132,7 +132,7 @@ const val sendPage: String =
             <body>
                 <form method="post" action="/submit">
                     <label for="vnr">Virksomhetsnummer:</label>
-                    <input id="vnr" name="vnr" type="text" value="910825631"><br>
+                    <input id="vnr" name="vnr" type="text" value="910825526"><br>
                     
                     <label for="tekst">Tekst:</label>
                     <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
@@ -169,7 +169,7 @@ fun okPage(utfall: String): String =
         
     """
 
-val nyOppgave: String =
+fun nyOppgave(): String =
     // language=GraphQL
     """
         mutation NyOppgave(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String!) {
@@ -217,7 +217,7 @@ const val errorPage: String =
     """
 
 
-val nyBeskjed: String =
+fun nyBeskjed(): String =
     // language=GraphQL
     """
         mutation NyBeskjed(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String!) {
