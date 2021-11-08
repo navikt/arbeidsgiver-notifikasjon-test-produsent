@@ -19,6 +19,14 @@ val objectMapper = jacksonObjectMapper()
 
 val httpClient = HttpClient(Apache)
 
+
+suspend fun ApplicationCall.respondHtml(html: String) {
+    this.respondText(
+        contentType = ContentType.Text.Html,
+        text = html,
+    )
+}
+
 fun main() {
     val log = LoggerFactory.getLogger("main")
 
@@ -31,10 +39,7 @@ fun main() {
             get {
                 log.info("hello, stranger")
 
-                call.respondText(
-                    text = sendPage,
-                    contentType = ContentType.Text.Html
-                )
+                call.respondHtml(sendPage)
             }
 
             post("/submit") {
@@ -48,13 +53,12 @@ fun main() {
                     log.info("trying to send test notification: '$vnr' '$tekst' '$url' '$type'")
                     val utfall = sendNotifikasjon(vnr, tekst, url, type)
 
-                    call.respondText(
-                        text = okPage(objectMapper.writeValueAsString(utfall)),
-                        contentType = ContentType.Text.Html
+                    call.respondHtml(
+                        okPage(objectMapper.writeValueAsString(utfall))
                     )
                 } catch (e: Exception) {
                     log.error("unexpected exception", e)
-                    call.respondText("exception :( see logs")
+                    call.respondHtml(errorPage)
                 }
             }
         }
@@ -149,10 +153,10 @@ fun okPage(utfall: String): String =
                 <title>Notifikasjon forsøkt sendt</title>
             </head>
             <body>
-                <h1>Notifikasjon send</h1>
+                <h1>Svar fra produsent-api:</h1>
                 $utfall
                 <br>
-                <a href="..">gå tilbake</a>
+                <a href="/">lag ny notifikasjon</a>
             </body>
         </html>
         
@@ -190,6 +194,19 @@ val nyOppgave: String =
                 }
             }
         }
+    """
+
+const val errorPage: String =
+    """
+        <html>
+            <head>
+                <title> error </title>
+            </head>
+            <body>
+                error :( se log
+                <a href="/">hovedside</a>
+            </body>
+        </html>
     """
 
 
