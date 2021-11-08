@@ -176,7 +176,7 @@ val nyOppgave: String =
             nyOppgave(
                 nyOppgave: {
                     metadata: {
-                        eksternId: ${java.util.UUID.randomUUID()}
+                        eksternId: "${java.util.UUID.randomUUID()}"
                     }
                     mottaker: {
                         altinn: {
@@ -224,7 +224,7 @@ val nyBeskjed: String =
             nyBeskjed(
                 nyBeskjed: {
                     metadata: {
-                        eksternId: ${java.util.UUID.randomUUID()}
+                        eksternId: "${java.util.UUID.randomUUID()}"
                     }
                     mottaker: {
                         altinn: {
