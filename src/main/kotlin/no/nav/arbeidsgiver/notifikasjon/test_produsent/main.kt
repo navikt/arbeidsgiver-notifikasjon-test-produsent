@@ -7,6 +7,9 @@ import io.ktor.client.*
 import io.ktor.client.engine.apache.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
+import io.ktor.client.response.*
+import io.ktor.client.statement.*
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.*
 import io.ktor.request.*
 import io.ktor.response.*
@@ -80,7 +83,7 @@ suspend fun sendNotifikasjon(vnr: String, tekst: String, url: String, type: Stri
 
 suspend fun executeGraphql(query: String, variables: Map<String, String>): Any {
     val accessToken = getAccessToken()
-    return httpClient.post("http://notifikasjon-produsent-api/api/graphql") {
+    val response: HttpResponse =  httpClient.post("http://notifikasjon-produsent-api/api/graphql") {
         header(HttpHeaders.Authorization, "Bearer $accessToken")
         header(HttpHeaders.ContentType, "application/json")
         header(HttpHeaders.Accept, "application/json")
@@ -91,6 +94,11 @@ suspend fun executeGraphql(query: String, variables: Map<String, String>): Any {
             )
         )
     }
+
+    return mapOf(
+        "status" to response.status,
+        "body" to response.readText(),
+    )
 }
 
 suspend fun getAccessToken(): String {
