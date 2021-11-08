@@ -172,7 +172,7 @@ fun okPage(utfall: String): String =
 val nyOppgave: String =
     // language=GraphQL
     """
-        mutation NyOppgave(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String) {
+        mutation NyOppgave(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String!) {
             nyOppgave(
                 nyOppgave: {
                     metadata: {
@@ -220,7 +220,7 @@ const val errorPage: String =
 val nyBeskjed: String =
     // language=GraphQL
     """
-        mutation NyBeskjed(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String) {
+        mutation NyBeskjed(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String!) {
             nyBeskjed(
                 nyBeskjed: {
                     metadata: {
