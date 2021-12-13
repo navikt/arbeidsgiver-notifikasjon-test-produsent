@@ -10,7 +10,7 @@
 
     <properties>
         <kotlin.version>1.5.10</kotlin.version>
-        <ktor.version>1.6.0</ktor.version>
+        <ktor.version>1.6.5</ktor.version>
         <jvm.version>15</jvm.version>
         <maven.compiler.source>${jvm.version}</maven.compiler.source>
         <maven.compiler.target>${jvm.version}</maven.compiler.target>
