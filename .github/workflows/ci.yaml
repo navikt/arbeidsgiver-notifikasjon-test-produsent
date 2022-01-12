@@ -36,6 +36,7 @@ jobs:
           cache-to: type=inline
 
       - uses: nais/deploy/actions/deploy@v1
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           IMAGE: ghcr.io/${{ github.repository }}/arbeidsgiver-notifikasjon-test-produsent:${{ github.sha }}
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
