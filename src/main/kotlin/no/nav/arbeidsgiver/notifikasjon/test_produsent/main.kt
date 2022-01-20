@@ -88,7 +88,7 @@ fun main() {
                     val tekst = formParameters["tekst"].toString()
                     val url = formParameters["url"].toString()
                     val type = formParameters["type"].toString()
-                    val fnrLeder = formParameters["fnrled"].toString()
+                    val fnrLeder = formParameters["fnrleder"].toString()
                     val fnrSykmeldt = formParameters["fnrsyk"].toString()
 
                     val variables = mapOf(
