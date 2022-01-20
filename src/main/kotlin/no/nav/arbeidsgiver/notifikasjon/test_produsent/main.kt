@@ -44,16 +44,68 @@ fun main() {
                 call.respondHtml(sendPage)
             }
 
-            post("/submit") {
+            post("/submit_altinn") {
                 try {
                     val formParameters = call.receiveParameters()
                     val vnr = formParameters["vnr"].toString()
                     val tekst = formParameters["tekst"].toString()
                     val url = formParameters["url"].toString()
                     val type = formParameters["type"].toString()
+                    val serviceCode = formParameters["scode"].toString()
+                    val serviceEdition = formParameters["sedit"].toString()
 
-                    log.info("trying to send test notification: '$vnr' '$tekst' '$url' '$type'")
-                    val utfall = sendNotifikasjon(vnr, tekst, url, type)
+                    val variables = mapOf(
+                        "vnr" to vnr,
+                        "tekst" to tekst,
+                        "url" to url,
+                        "serviceCode" to serviceCode,
+                        "serviceEdition" to serviceEdition,
+                    )
+
+                    val mottaker = """
+                        altinn: {
+                            serviceCode: ${'$'}serviceCode
+                            serviceEdition: ${'$'}serviceEdition
+                            virksomhetsnummer: ${'$'}vnr
+                        }
+                    """
+                    val utfall = sendNotifikasjon(
+                        type = type,
+                        variables = variables,
+                        mottaker = mottaker,
+                    )
+                    call.respondHtml(okPage(utfall))
+                } catch (e: Exception) {
+                    log.error("unexpected exception", e)
+                    call.respondHtml(errorPage)
+                }
+            }
+
+            post("/submit_digisyfo") {
+                try {
+                    val formParameters = call.receiveParameters()
+                    val vnr = formParameters["vnr"].toString()
+                    val tekst = formParameters["tekst"].toString()
+                    val url = formParameters["url"].toString()
+                    val type = formParameters["type"].toString()
+                    val fnrLeder = formParameters["fnrled"].toString()
+                    val fnrSykmeldt = formParameters["fnrsyk"].toString()
+
+                    val variables = mapOf(
+                        "vnr" to vnr,
+                        "tekst" to tekst,
+                        "url" to url,
+                        "fnrLeder" to fnrLeder,
+                        "fnrSykmeldt" to fnrSykmeldt
+                    )
+                    val mottaker = """
+                        naermesteLeder: {
+                            naermesteLederFnr: ${'$'}fnrLeder
+                            ansattFnr: ${'$'}fnrSykmeldt
+                            virksomhetsnummer: ${'$'}vnr
+                        }
+                    """
+                    val utfall = sendNotifikasjon(type = type, mottaker = mottaker, variables = variables)
 
                     call.respondHtml(okPage(utfall))
                 } catch (e: Exception) {
@@ -65,15 +117,10 @@ fun main() {
     }.start(wait = true)
 }
 
-suspend fun sendNotifikasjon(vnr: String, tekst: String, url: String, type: String): String {
-    val variables = mapOf(
-        "vnr" to vnr,
-        "tekst" to tekst,
-        "url" to url,
-    )
+suspend fun sendNotifikasjon(type: String, mottaker: String, variables: Map<String, String>): String {
     return when (type) {
-        "beskjed" -> executeGraphql(nyBeskjed(), variables)
-        "oppgave" -> executeGraphql(nyOppgave(), variables)
+        "beskjed" -> executeGraphql(nyBeskjed(mottaker), variables)
+        "oppgave" -> executeGraphql(nyOppgave(mottaker), variables)
         else -> "ukjent type '$type' :("
     }
 }
@@ -111,7 +158,7 @@ suspend fun getAccessToken(): String {
         formParameters = Parameters.build {
             set("tenant", tenantId)
             set("client_id", clientId)
-            set( "scope" , "api://dev-gcp.fager.notifikasjon-produsent-api/.default")
+            set("scope" , "api://dev-gcp.fager.notifikasjon-produsent-api/.default")
             set("client_secret", clientSecret)
             set("grant_type", "client_credentials")
         }
@@ -130,26 +177,61 @@ const val sendPage: String =
                 <title>Test produsent</title>
             </head>
             <body>
-                 Mottakere: altinn-tjenesten Inntektsmelding (service code "4936", edition "1") <br>
-                 
-                <form method="post" action="/submit">
-                    <label for="vnr">Virksomhetsnummer:</label>
-                    <input id="vnr" name="vnr" type="text" value="910825526"><br>
-                    
-                    <label for="tekst">Tekst:</label>
-                    <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
-                    
-                    <label for="url">url:</label>
-                    <input id="url" name="url" type="text" value="https://dev.nav.no"><br>
-                    
-                    
-                    Notifikasjonstype:<br>
-                    <input type="radio" id="beskjed" name="type" value="beskjed" checked>
-                    <label for="beskjed">beskjed</label><br>
-                    <input type="radio" id="oppgave" name="type" value="oppgave">
-                    <label for="oppgave">oppgave</label><br>
-                    <input type="submit" value="send">
-                </form>
+                <div style="margin: 2em">
+                     Mottakere: altinn-tjenesten (Default: Inntektsmelding, service code "4936", edition "1") <br>
+                     
+                    <form method="post" action="/submit_altinn">
+                        <label for="vnr">Virksomhetsnummer:</label>
+                        <input id="vnr" name="vnr" type="text" value="910825526"><br>
+                        
+                        <label for="scode">Service code:</label>
+                        <input id="scode" name="scode" type="text" value="4936"><br>
+                        
+                        <label for="sedit">Service edition:</label>
+                        <input id="sedit" name="sedit" type="text" value="1"><br>
+                        
+                        <label for="tekst">Tekst:</label>
+                        <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
+                        
+                        <label for="url">url:</label>
+                        <input id="url" name="url" type="text" value="https://dev.nav.no"><br>
+                        
+                        
+                        Notifikasjonstype:<br>
+                        <input type="radio" id="beskjed" name="type" value="beskjed" checked>
+                        <label for="beskjed">beskjed</label><br>
+                        <input type="radio" id="oppgave" name="type" value="oppgave">
+                        <label for="oppgave">oppgave</label><br>
+                        <input type="submit" value="send">
+                    </form>
+                </div>
+                <div style="margin: 2em;">
+                     Mottakere: naermeste leder<br>
+                     
+                    <form method="post" action="/submit_digisyfo">
+                        <label for="vnr">Virksomhetsnummer:</label>
+                        <input id="vnr" name="vnr" type="text" value="910825526"><br>
+                        
+                        <label for="fnrleder">Fnr leder:</label>
+                        <input id="fnrleder" name="fnrleder" type="text" value=""><br>
+                        
+                        <label for="fnrsyk">Fnr sykmeldt:</label>
+                        <input id="fnrsyk" name="fnrsyk" type="text" value=""><br>
+                        
+                        <label for="tekst">Tekst:</label>
+                        <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
+                        
+                        <label for="url">url:</label>
+                        <input id="url" name="url" type="text" value="https://dev.nav.no"><br>
+                        
+                        Notifikasjonstype:<br>
+                        <input type="radio" id="beskjed" name="type" value="beskjed" checked>
+                        <label for="beskjed">beskjed</label><br>
+                        <input type="radio" id="oppgave" name="type" value="oppgave">
+                        <label for="oppgave">oppgave</label><br>
+                        <input type="submit" value="send">
+                    </form>
+                </div>
             </body>
         </html>
     """
@@ -171,7 +253,7 @@ fun okPage(utfall: String): String =
         
     """
 
-fun nyOppgave(): String =
+fun nyOppgave(mottaker: String): String =
     // language=GraphQL
     """
         mutation NyOppgave(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String!) {
@@ -181,11 +263,7 @@ fun nyOppgave(): String =
                         eksternId: "${java.util.UUID.randomUUID()}"
                     }
                     mottaker: {
-                        altinn: {
-                            serviceCode: "4936"
-                            serviceEdition: "1"
-                            virksomhetsnummer: ${'$'}vnr
-                        }
+                        $mottaker
                     }
                     notifikasjon: {
                         merkelapp: "fager"
@@ -218,8 +296,7 @@ const val errorPage: String =
         </html>
     """
 
-
-fun nyBeskjed(): String =
+fun nyBeskjed(mottaker: String): String =
     // language=GraphQL
     """
         mutation NyBeskjed(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String!) {
@@ -229,11 +306,7 @@ fun nyBeskjed(): String =
                         eksternId: "${java.util.UUID.randomUUID()}"
                     }
                     mottaker: {
-                        altinn: {
-                            serviceCode: "4936"
-                            serviceEdition: "1"
-                            virksomhetsnummer: ${'$'}vnr
-                        }
+                        $mottaker
                     }
                     notifikasjon: {
                         merkelapp: "fager"
