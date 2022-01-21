@@ -39,8 +39,6 @@ fun main() {
             }
 
             get {
-                log.info("hello, stranger")
-
                 call.respondHtml(sendPage)
             }
 
@@ -119,24 +117,26 @@ fun main() {
 
 suspend fun sendNotifikasjon(type: String, mottaker: String, variables: Map<String, String>): String {
     return when (type) {
-        "beskjed" -> executeGraphql(nyBeskjed(mottaker), variables)
-        "oppgave" -> executeGraphql(nyOppgave(mottaker), variables)
+        "beskjed" -> executeGraphql(nyBeskjed(variables.keys.toList(), mottaker), variables)
+        "oppgave" -> executeGraphql(nyOppgave(variables.keys.toList(), mottaker), variables)
         else -> "ukjent type '$type' :("
     }
 }
 
 suspend fun executeGraphql(query: String, variables: Map<String, String>): String {
-    val accessToken = getAccessToken()
-    val response: HttpResponse =  httpClient.post("http://notifikasjon-produsent-api/api/graphql") {
-        header(HttpHeaders.Authorization, "Bearer $accessToken")
-        header(HttpHeaders.ContentType, "application/json")
-        header(HttpHeaders.Accept, "application/json")
-        body = objectMapper.writeValueAsString(
+    val requestBody = objectMapper.writeValueAsString(
             mapOf(
                 "query" to query,
                 "variables" to variables,
             )
         )
+            .also { println(it) }
+    val accessToken = getAccessToken()
+    val response: HttpResponse =  httpClient.post("http://notifikasjon-produsent-api/api/graphql") {
+        header(HttpHeaders.Authorization, "Bearer $accessToken")
+        header(HttpHeaders.ContentType, "application/json")
+        header(HttpHeaders.Accept, "application/json")
+        body = requestBody
     }
 
     return objectMapper.writeValueAsString(
@@ -181,27 +181,27 @@ const val sendPage: String =
                      Mottakere: altinn-tjenesten (Default: Inntektsmelding, service code "4936", edition "1") <br>
                      
                     <form method="post" action="/submit_altinn">
-                        <label for="vnr">Virksomhetsnummer:</label>
-                        <input id="vnr" name="vnr" type="text" value="910825526"><br>
+                        <label for="altinn_vnr">Virksomhetsnummer:</label>
+                        <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
                         
-                        <label for="scode">Service code:</label>
-                        <input id="scode" name="scode" type="text" value="4936"><br>
+                        <label for="altinn_scode">Service code:</label>
+                        <input id="altinn_scode" name="scode" type="text" value="4936"><br>
                         
-                        <label for="sedit">Service edition:</label>
-                        <input id="sedit" name="sedit" type="text" value="1"><br>
+                        <label for="altinn_sedit">Service edition:</label>
+                        <input id="altinn_sedit" name="sedit" type="text" value="1"><br>
                         
-                        <label for="tekst">Tekst:</label>
-                        <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
+                        <label for="altinn_tekst">Tekst:</label>
+                        <input id="altinn_tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
                         
-                        <label for="url">url:</label>
-                        <input id="url" name="url" type="text" value="https://dev.nav.no"><br>
+                        <label for="altinn_url">url:</label>
+                        <input id="altinn_url" name="url" type="text" value="https://dev.nav.no"><br>
                         
                         
                         Notifikasjonstype:<br>
-                        <input type="radio" id="beskjed" name="type" value="beskjed" checked>
-                        <label for="beskjed">beskjed</label><br>
-                        <input type="radio" id="oppgave" name="type" value="oppgave">
-                        <label for="oppgave">oppgave</label><br>
+                        <input type="radio" id="altinn_beskjed" name="type" value="beskjed" checked>
+                        <label for="altinn_beskjed">beskjed</label><br>
+                        <input type="radio" id="altinn_oppgave" name="type" value="oppgave">
+                        <label for="altinn_oppgave">oppgave</label><br>
                         <input type="submit" value="send">
                     </form>
                 </div>
@@ -253,10 +253,10 @@ fun okPage(utfall: String): String =
         
     """
 
-fun nyOppgave(mottaker: String): String =
+fun nyOppgave(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NyOppgave(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String!) {
+        mutation NyOppgave(${ vars.joinToString(" ") { "$$it: String!" } }) {
             nyOppgave(
                 nyOppgave: {
                     metadata: {
@@ -296,10 +296,10 @@ const val errorPage: String =
         </html>
     """
 
-fun nyBeskjed(mottaker: String): String =
+fun nyBeskjed(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NyBeskjed(${'$'}vnr: String! ${'$'}tekst: String! ${'$'}url: String!) {
+        mutation NyBeskjed(${ vars.joinToString(" ") { "${'$'}$it: String!" } }) {
             nyBeskjed(
                 nyBeskjed: {
                     metadata: {
