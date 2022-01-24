@@ -130,7 +130,6 @@ suspend fun executeGraphql(query: String, variables: Map<String, String>): Strin
                 "variables" to variables,
             )
         )
-            .also { println(it) }
     val accessToken = getAccessToken()
     val response: HttpResponse =  httpClient.post("http://notifikasjon-produsent-api/api/graphql") {
         header(HttpHeaders.Authorization, "Bearer $accessToken")
