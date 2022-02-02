@@ -260,10 +260,13 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
                 nyOppgave: {
                     metadata: {
                         eksternId: "${java.util.UUID.randomUUID()}"
+                        virksomhetsnummer: ${'$'}vnr
                     }
-                    mottaker: {
-                        $mottaker
-                    }
+                    mottakere: [
+                        {
+                            $mottaker
+                        }
+                    ]
                     notifikasjon: {
                         merkelapp: "fager"
                         tekst: ${'$'}tekst
@@ -303,10 +306,13 @@ fun nyBeskjed(vars: List<String>, mottaker: String): String =
                 nyBeskjed: {
                     metadata: {
                         eksternId: "${java.util.UUID.randomUUID()}"
+                        virksomhetsnummer: ${'$'}vnr
                     }
-                    mottaker: {
-                        $mottaker
-                    }
+                    mottakere: [
+                        {
+                            $mottaker
+                        }
+                    ]
                     notifikasjon: {
                         merkelapp: "fager"
                         tekst: ${'$'}tekst
