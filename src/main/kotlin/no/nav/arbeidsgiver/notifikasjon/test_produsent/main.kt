@@ -144,6 +144,39 @@ fun main() {
                     call.respondHtml(errorPage)
                 }
             }
+            post("/submit_altinn_reportee") {
+                try {
+                    val formParameters = call.receiveParameters()
+                    val vnr = formParameters["vnr"].toString()
+                    val fnr = formParameters["fnr"].toString()
+                    val tekst = formParameters["tekst"].toString()
+                    val url = formParameters["url"].toString()
+                    val type = formParameters["type"].toString()
+
+
+                    val variables = mapOf(
+                        "vnr" to vnr,
+                        "fnr" to fnr,
+                        "tekst" to tekst,
+                        "url" to url,
+                    )
+
+                    val mottaker = """
+                        altinnReportee: {
+                            fnr: ${'$'}fnr
+                        }
+                    """
+                    val utfall = sendNotifikasjon(
+                        type = type,
+                        variables = variables,
+                        mottaker = mottaker,
+                    )
+                    call.respondHtml(okPage(utfall))
+                } catch (e: Exception) {
+                    log.error("unexpected exception", e)
+                    call.respondHtml(errorPage)
+                }
+            }
         }
     }.start(wait = true)
 }
@@ -264,7 +297,7 @@ const val sendPage: String =
                         <input type="submit" value="send">
                     </form>
                 </div>
-                         <div style="margin: 2em;">
+                <div style="margin: 2em;">
                      Mottakere: altinn rolle<br>
                      
                     <form method="post" action="/submit_altinn_rolle">
@@ -273,6 +306,30 @@ const val sendPage: String =
                         
                         <label for="altinn_rcode">altinn rollekode:</label>
                         <input id="altinn_rcode" name="rcode" type="text" value="DAGL"><br>
+
+                        <label for="tekst">Tekst:</label>
+                        <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
+                        
+                        <label for="url">url:</label>
+                        <input id="url" name="url" type="text" value="https://dev.nav.no"><br>
+                        
+                        Notifikasjonstype:<br>
+                        <input type="radio" id="beskjed" name="type" value="beskjed" checked>
+                        <label for="beskjed">beskjed</label><br>
+                        <input type="radio" id="oppgave" name="type" value="oppgave">
+                        <label for="oppgave">oppgave</label><br>
+                        <input type="submit" value="send">
+                    </form>
+                </div>
+                <div style="margin: 2em;">
+                     Mottakere: altinn reportee<br>
+                     
+                    <form method="post" action="/submit_altinn_reportee">
+                        <label for="vnr">Virksomhetsnummer:</label>
+                        <input id="vnr" name="vnr" type="text" value="910825526"><br>
+                        
+                        <label for="fnr">altinn reportee:</label>
+                        <input id="fnr" name="fnr" type="text" value="16120101181"><br>
 
                         <label for="tekst">Tekst:</label>
                         <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
