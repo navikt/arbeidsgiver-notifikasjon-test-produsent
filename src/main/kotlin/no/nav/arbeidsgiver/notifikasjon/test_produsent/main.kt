@@ -21,6 +21,7 @@ val objectMapper = jacksonObjectMapper()
 
 val httpClient = HttpClient(Apache)
 
+val log = LoggerFactory.getLogger("main")
 
 suspend fun ApplicationCall.respondHtml(html: String) {
     this.respondText(
@@ -30,7 +31,7 @@ suspend fun ApplicationCall.respondHtml(html: String) {
 }
 
 fun main() {
-    val log = LoggerFactory.getLogger("main")
+
 
     embeddedServer(Netty, port = 8080) {
         routing {
@@ -69,6 +70,41 @@ fun main() {
                     """
                     val utfall = sendNotifikasjon(
                         type = type,
+                        variables = variables,
+                        mottaker = mottaker,
+                    )
+                    call.respondHtml(okPage(utfall))
+                } catch (e: Exception) {
+                    log.error("unexpected exception", e)
+                    call.respondHtml(errorPage)
+                }
+            }
+
+            post("/opprett_sak") {
+                try {
+                    val formParameters = call.receiveParameters()
+                    val vnr = formParameters["vnr"].toString()
+                    val tittel = formParameters["tittel"].toString()
+                    val url = formParameters["url"].toString()
+                    val serviceCode = formParameters["scode"].toString()
+                    val serviceEdition = formParameters["sedit"].toString()
+
+                    val variables = mapOf(
+                        "vnr" to vnr,
+                        "tittel" to tittel,
+                        "url" to url,
+                        "serviceCode" to serviceCode,
+                        "serviceEdition" to serviceEdition,
+                    )
+
+                    val mottaker = """
+                        altinn: {
+                            serviceCode: ${'$'}serviceCode
+                            serviceEdition: ${'$'}serviceEdition
+                            virksomhetsnummer: ${'$'}vnr
+                        }
+                    """
+                    val utfall = opprettNySak(
                         variables = variables,
                         mottaker = mottaker,
                     )
@@ -181,6 +217,10 @@ fun main() {
     }.start(wait = true)
 }
 
+suspend fun opprettNySak(variables: Map<String, String>, mottaker: String): String {
+    return executeGraphql(nySak(variables.keys.toList(), mottaker), variables)
+}
+
 suspend fun sendNotifikasjon(type: String, mottaker: String, variables: Map<String, String>): String {
     return when (type) {
         "beskjed" -> executeGraphql(nyBeskjed(variables.keys.toList(), mottaker), variables)
@@ -190,6 +230,7 @@ suspend fun sendNotifikasjon(type: String, mottaker: String, variables: Map<Stri
 }
 
 suspend fun executeGraphql(query: String, variables: Map<String, String>): String {
+    log.info("Ville ha sendt: {}, {}", query, variables)
     val requestBody = objectMapper.writeValueAsString(
             mapOf(
                 "query" to query,
@@ -345,6 +386,29 @@ const val sendPage: String =
                         <input type="submit" value="send">
                     </form>
                 </div>
+                <div style="margin: 2em">
+                     Opprett ny sak <br>
+                     
+                    <form method="post" action="/opprett_sak">
+                        <label for="altinn_vnr">Virksomhetsnummer:</label>
+                        <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
+                        
+                        <label for="altinn_scode">Service code:</label>
+                        <input id="altinn_scode" name="scode" type="text" value="4936"><br>
+                        
+                        <label for="altinn_sedit">Service edition:</label>
+                        <input id="altinn_sedit" name="sedit" type="text" value="1"><br>
+                        
+                        <label for="altinn_tekst">Tittel:</label>
+                        <input id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"><br>
+                        
+                        <label for="altinn_url">url:</label>
+                        <input id="altinn_url" name="url" type="text" value="https://dev.nav.no"><br>
+                        
+                        
+                        <input type="submit" value="send">
+                    </form>
+                </div>
             </body>
         </html>
     """
@@ -445,3 +509,37 @@ fun nyBeskjed(vars: List<String>, mottaker: String): String =
         }
     """
 
+fun nySak(vars: List<String>, mottaker: String): String =
+    // language=GraphQL
+    """
+        mutation NySak(${ vars.joinToString(" ") { "${'$'}$it: String!" } }) {
+            nySak(
+                sak: {
+                    grupperingsid: "${java.util.UUID.randomUUID()}"
+                    merkelapp: "fager"
+                    virksomhetsnummer: ${'$'}vnr
+                    
+                    mottakere: [
+                        {
+                            $mottaker
+                        }
+                    ]
+                    
+                    tittel: ${'$'}tittel
+                    lenke: ${'$'}url
+
+                    status: {
+                     status: MOTTATT
+                    }
+                }
+            ) {
+                __typename
+                ... on NySakVellykket {
+                    id
+                }
+                ... on Error {
+                    feilmelding
+                }
+            }
+        }
+    """
