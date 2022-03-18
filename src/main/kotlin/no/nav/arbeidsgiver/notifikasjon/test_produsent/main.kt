@@ -514,24 +514,17 @@ fun nySak(vars: List<String>, mottaker: String): String =
     """
         mutation NySak(${ vars.joinToString(" ") { "${'$'}$it: String!" } }) {
             nySak(
-                sak: {
-                    grupperingsid: "${java.util.UUID.randomUUID()}"
-                    merkelapp: "fager"
-                    virksomhetsnummer: ${'$'}vnr
-                    
-                    mottakere: [
-                        {
-                            $mottaker
-                        }
-                    ]
-                    
-                    tittel: ${'$'}tittel
-                    lenke: ${'$'}url
-
-                    status: {
-                     status: MOTTATT
+                grupperingsid: "${java.util.UUID.randomUUID()}"
+                merkelapp: "fager"
+                virksomhetsnummer: ${'$'}vnr
+                mottakere: [
+                    {
+                        $mottaker
                     }
-                }
+                ]
+                tittel: ${'$'}tittel
+                lenke: ${'$'}url
+                initiell_status: MOTTATT
             ) {
                 __typename
                 ... on NySakVellykket {
