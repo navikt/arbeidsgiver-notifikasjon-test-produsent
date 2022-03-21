@@ -65,7 +65,6 @@ fun main() {
                         altinn: {
                             serviceCode: ${'$'}serviceCode
                             serviceEdition: ${'$'}serviceEdition
-                            virksomhetsnummer: ${'$'}vnr
                         }
                     """
                     val utfall = sendNotifikasjon(
@@ -101,7 +100,6 @@ fun main() {
                         altinn: {
                             serviceCode: ${'$'}serviceCode
                             serviceEdition: ${'$'}serviceEdition
-                            virksomhetsnummer: ${'$'}vnr
                         }
                     """
                     val utfall = opprettNySak(
@@ -136,7 +134,6 @@ fun main() {
                         naermesteLeder: {
                             naermesteLederFnr: ${'$'}fnrLeder
                             ansattFnr: ${'$'}fnrSykmeldt
-                            virksomhetsnummer: ${'$'}vnr
                         }
                     """
                     val utfall = sendNotifikasjon(type = type, mottaker = mottaker, variables = variables)
