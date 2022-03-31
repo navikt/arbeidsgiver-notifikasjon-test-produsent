@@ -319,13 +319,13 @@ suspend fun sendNotifikasjon(type: String, mottaker: String, variables: Map<Stri
 suspend fun executeGraphql(query: String, variables: Map<String, String>): String {
     log.info("Ville ha sendt: {}, {}", query, variables)
     val requestBody = objectMapper.writeValueAsString(
-            mapOf(
-                "query" to query,
-                "variables" to variables,
-            )
+        mapOf(
+            "query" to query,
+            "variables" to variables,
         )
+    )
     val accessToken = getAccessToken()
-    val response: HttpResponse =  httpClient.post("http://notifikasjon-produsent-api/api/graphql") {
+    val response: HttpResponse = httpClient.post("http://notifikasjon-produsent-api/api/graphql") {
         header(HttpHeaders.Authorization, "Bearer $accessToken")
         header(HttpHeaders.ContentType, "application/json")
         header(HttpHeaders.Accept, "application/json")
@@ -351,7 +351,7 @@ suspend fun getAccessToken(): String {
         formParameters = Parameters.build {
             set("tenant", tenantId)
             set("client_id", clientId)
-            set("scope" , "api://dev-gcp.fager.notifikasjon-produsent-api/.default")
+            set("scope", "api://dev-gcp.fager.notifikasjon-produsent-api/.default")
             set("client_secret", clientSecret)
             set("grant_type", "client_credentials")
         }
@@ -362,203 +362,280 @@ suspend fun getAccessToken(): String {
     return map["access_token"] as String
 }
 
+
 // language=HTML
 const val sendPage: String =
     """
         <html>
             <head>
                 <title>Test produsent</title>
+                <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
+                <link href="https://unpkg.com/nes.css/css/nes.css" rel="stylesheet" />
+            
+                <style>
+                  html, body, pre, code, kbd, samp {
+                      font-family: "Press Start 2P",serif;
+                  }
+                </style>
             </head>
-            <body>
-                <div style="margin: 2em">
-                     Mottakere: altinn-tjenesten (Default: Inntektsmelding, service code "4936", edition "1") <br>
+            <body style='display: flex'>
+                <section class="nes-container" style='overflow: scroll; width: 50vw'>
+                    <h1>Opprett notifikasjon</h1>
                      
-                    <form method="post" action="/submit_altinn">
-                        <label for="altinn_vnr">Virksomhetsnummer:</label>
-                        <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
-                        
-                        <label for="altinn_scode">Service code:</label>
-                        <input id="altinn_scode" name="scode" type="text" value="4936"><br>
-                        
-                        <label for="altinn_sedit">Service edition:</label>
-                        <input id="altinn_sedit" name="sedit" type="text" value="1"><br>
-                        
-                        <label for="altinn_tekst">Tekst:</label>
-                        <input id="altinn_tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
-                        
-                        <label for="altinn_url">url:</label>
-                        <input id="altinn_url" name="url" type="text" value="https://dev.nav.no"><br>
-                        
-                        
-                        Notifikasjonstype:<br>
-                        <input type="radio" id="altinn_beskjed" name="type" value="beskjed" checked>
-                        <label for="altinn_beskjed">beskjed</label><br>
-                        <input type="radio" id="altinn_oppgave" name="type" value="oppgave">
-                        <label for="altinn_oppgave">oppgave</label><br>
-                        <input type="submit" value="send">
-                    </form>
-                </div>
-                <div style="margin: 2em;">
-                     Mottakere: naermeste leder<br>
+                    <section class="nes-container with-title">
+                        <h2 class='title'>Mottakere: altinn-tjeneste</h2>
                      
-                    <form method="post" action="/submit_digisyfo">
-                        <label for="vnr">Virksomhetsnummer:</label>
-                        <input id="vnr" name="vnr" type="text" value="910825526"><br>
-                        
-                        <label for="fnrleder">Fnr leder:</label>
-                        <input id="fnrleder" name="fnrleder" type="text" value=""><br>
-                        
-                        <label for="fnrsyk">Fnr sykmeldt:</label>
-                        <input id="fnrsyk" name="fnrsyk" type="text" value=""><br>
-                        
-                        <label for="tekst">Tekst:</label>
-                        <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
-                        
-                        <label for="url">url:</label>
-                        <input id="url" name="url" type="text" value="https://dev.nav.no"><br>
-                        
-                        Notifikasjonstype:<br>
-                        <input type="radio" id="beskjed" name="type" value="beskjed" checked>
-                        <label for="beskjed">beskjed</label><br>
-                        <input type="radio" id="oppgave" name="type" value="oppgave">
-                        <label for="oppgave">oppgave</label><br>
-                        <input type="submit" value="send">
-                    </form>
-                </div>
-                <div style="margin: 2em;">
-                     Mottakere: altinn rolle<br>
+                        <form method="post" action="/submit_altinn">
+                            <div class='nes-field'>
+                                <label for="altinn_vnr">Virksomhetsnummer:</label>
+                                <input class='nes-input' id="altinn_vnr" name="vnr" type="text" value="910825526" >
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_scode">Service code:</label>
+                                <input class='nes-input' id="altinn_scode" name="scode" type="text" value="4936">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_sedit">Service edition:</label>
+                                <input class='nes-input' id="altinn_sedit" name="sedit" type="text" value="1">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_tekst">Tekst:</label>
+                                <input class='nes-input' id="altinn_tekst" name="tekst" type="text" value="Dette er en test-melding">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_url">url:</label>
+                                <input class='nes-input' id="altinn_url" name="url" type="text" value="https://dev.nav.no">
+                            </div>
+                            
+                            <section class="nes-container with-title">
+                                <h3 class='title'>Notifikasjonstype</h3>
+                                <label for="altinn_beskjed">
+                                    <input type="radio" class='nes-radio' id="altinn_beskjed" name="type" value="beskjed" checked> 
+                                    <span>beskjed</span>
+                                </label>
+                                <label for="altinn_oppgave">
+                                    <input type="radio" class='nes-radio' id="altinn_oppgave" name="type" value="oppgave">
+                                    <span>oppgave</span>
+                                </label>
+                            </section>
+                            <button class='nes-btn is-primary'>send</button>
+                        </form>
+                    </section>
+                    <section class="nes-container with-title">
+                        <h2 class='title'>Mottakere: naermeste leder</h2>
+                         
+                        <form method="post" action="/submit_digisyfo">
+                            <div class='nes-field'>
+                                <label for="vnr">Virksomhetsnummer:</label>
+                                <input class='nes-input' id="vnr" name="vnr" type="text" value="910825526">
+                            </div>
+                            <div class='nes-field'>    
+                                <label for="fnrleder">Fnr leder:</label>
+                                <input class='nes-input' id="fnrleder" name="fnrleder" type="text" value="">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="fnrsyk">Fnr sykmeldt:</label>
+                                <input class='nes-input' id="fnrsyk" name="fnrsyk" type="text" value="">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="tekst">Tekst:</label>
+                                <input class='nes-input' id="tekst" name="tekst" type="text" value="Dette er en test-melding">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="url">url:</label>
+                                <input class='nes-input' id="url" name="url" type="text" value="https://dev.nav.no">
+                            </div>
+                            <section class="nes-container with-title">
+                                <h3 class='title'>Notifikasjonstype</h3>
+                                <label for="altinn_beskjed">
+                                    <input type="radio" class='nes-radio' id="beskjed" name="type" value="beskjed" checked> 
+                                    <span>beskjed</span>
+                                </label>
+                                <label for="altinn_oppgave">
+                                    <input type="radio" class='nes-radio' id="oppgave" name="type" value="oppgave">
+                                    <span>oppgave</span>
+                                </label>
+                            </section>
+                            <button class='nes-btn is-primary'>send</button>
+                        </form>
+                    </section>
+                    <section class="nes-container with-title">
+                        <h2 class='title'>Mottakere: altinn rolle</h2>
                      
-                    <form method="post" action="/submit_altinn_rolle">
-                        <label for="vnr">Virksomhetsnummer:</label>
-                        <input id="vnr" name="vnr" type="text" value="910825526"><br>
-                        
-                        <label for="altinn_rcode">altinn rollekode:</label>
-                        <input id="altinn_rcode" name="rcode" type="text" value="DAGL"><br>
-
-                        <label for="tekst">Tekst:</label>
-                        <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
-                        
-                        <label for="url">url:</label>
-                        <input id="url" name="url" type="text" value="https://dev.nav.no"><br>
-                        
-                        Notifikasjonstype:<br>
-                        <input type="radio" id="beskjed" name="type" value="beskjed" checked>
-                        <label for="beskjed">beskjed</label><br>
-                        <input type="radio" id="oppgave" name="type" value="oppgave">
-                        <label for="oppgave">oppgave</label><br>
-                        <input type="submit" value="send">
-                    </form>
-                </div>
-                <div style="margin: 2em;">
-                     Mottakere: altinn reportee<br>
+                        <form method="post" action="/submit_altinn_rolle"> 
+                            <div class='nes-field'>
+                                <label for="vnr">Virksomhetsnummer:</label>
+                                <input class='nes-input' id="vnr" name="vnr" type="text" value="910825526">
+                            </div>
+                            <div class='nes-field'>    
+                                <label for="altinn_rcode">altinn rollekode:</label>
+                                <input class='nes-input' id="altinn_rcode" name="rcode" type="text" value="DAGL">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="tekst">Tekst:</label>
+                                <input class='nes-input' id="tekst" name="tekst" type="text" value="Dette er en test-melding">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="url">url:</label>
+                                <input class='nes-input' id="url" name="url" type="text" value="https://dev.nav.no">
+                            </div>
+                            
+                            <section class="nes-container with-title">
+                                <h3 class='title'>Notifikasjonstype</h3>
+                                <label for="altinn_beskjed">
+                                    <input type="radio" class='nes-radio' id="beskjed" name="type" value="beskjed" checked> 
+                                    <span>beskjed</span>
+                                </label>
+                                <label for="altinn_oppgave">
+                                    <input type="radio" class='nes-radio' id="oppgave" name="type" value="oppgave">
+                                    <span>oppgave</span>
+                                </label>
+                            </section>
+                            <button class='nes-btn is-primary'>send</button>
+                        </form>
+                    </section>
+                    <section class="nes-container with-title">
+                        <h2 class='title'>Mottakere: altinn reportee</h2>
+                         
+                        <form method="post" action="/submit_altinn_reportee">
+                            <div class='nes-field'>
+                                <label for="vnr">Virksomhetsnummer:</label>
+                                <input class='nes-input' id="vnr" name="vnr" type="text" value="910825526">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="fnr">altinn reportee:</label>
+                                <input class='nes-input' id="fnr" name="fnr" type="text" value="16120101181">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="tekst">Tekst:</label>
+                                <input class='nes-input' id="tekst" name="tekst" type="text" value="Dette er en test-melding">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="url">url:</label>
+                                <input class='nes-input' id="url" name="url" type="text" value="https://dev.nav.no">
+                            </div>
+                            
+                            <section class="nes-container with-title">
+                                <h3 class='title'>Notifikasjonstype</h3>
+                                <label for="altinn_beskjed">
+                                    <input type="radio" class='nes-radio' id="beskjed" name="type" value="beskjed" checked> 
+                                    <span>beskjed</span>
+                                </label>
+                                <label for="altinn_oppgave">
+                                    <input type="radio" class='nes-radio' id="oppgave" name="type" value="oppgave">
+                                    <span>oppgave</span>
+                                </label>
+                            </section>
+                            <button class='nes-btn is-primary'>send</button>
+                        </form>
+                    </section>
+                </section>
+                <section class="nes-container with-title" style='overflow: scroll; width: 50vw'>
+                    <h1>Opprett sak</h1>
+                    <section class="nes-container with-title">
+                        <h2 class='title'>Mottakere: altinn tjeneste</h2>
+                         
+                        <form method="post" action="/opprett_sak_servicecode">
+                            <div class='nes-field'>
+                                <label for="altinn_vnr">Virksomhetsnummer:</label>
+                                <input class='nes-input' id="altinn_vnr" name="vnr" type="text" value="910825526">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_scode">Service code:</label>
+                                <input class='nes-input' id="altinn_scode" name="scode" type="text" value="4936">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_sedit">Service edition:</label>
+                                <input class='nes-input' id="altinn_sedit" name="sedit" type="text" value="1">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_tekst">Tittel:</label>
+                                <input class='nes-input' id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"></textarea>
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_url">url:</label>
+                                <input class='nes-input' id="altinn_url" name="url" type="text" value="https://dev.nav.no">
+                            </div>
+                            
+                            <button class='nes-btn is-primary'>send</button>
+                        </form>
+                    </section>
+                    <section class="nes-container with-title">
+                        <h2 class='title'>Mottakere: altinn rolle</h2>
                      
-                    <form method="post" action="/submit_altinn_reportee">
-                        <label for="vnr">Virksomhetsnummer:</label>
-                        <input id="vnr" name="vnr" type="text" value="910825526"><br>
-                        
-                        <label for="fnr">altinn reportee:</label>
-                        <input id="fnr" name="fnr" type="text" value="16120101181"><br>
-
-                        <label for="tekst">Tekst:</label>
-                        <input id="tekst" name="tekst" type="text" value="Dette er en test-melding"><br>
-                        
-                        <label for="url">url:</label>
-                        <input id="url" name="url" type="text" value="https://dev.nav.no"><br>
-                        
-                        Notifikasjonstype:<br>
-                        <input type="radio" id="beskjed" name="type" value="beskjed" checked>
-                        <label for="beskjed">beskjed</label><br>
-                        <input type="radio" id="oppgave" name="type" value="oppgave">
-                        <label for="oppgave">oppgave</label><br>
-                        <input type="submit" value="send">
-                    </form>
-                </div>
-                <div style="margin: 2em">
-                     Opprett sak: tjeneste <br>
+                        <form method="post" action="/opprett_sak_rolle">
+                            <div class='nes-field'>
+                                <label for="altinn_vnr">Virksomhetsnummer:</label>
+                                <input class='nes-input' id="altinn_vnr" name="vnr" type="text" value="910825526">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_rcode">altinn rollekode:</label>
+                                <input class='nes-input' id="altinn_rcode" name="rcode" type="text" value="DAGL">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_tekst">Tittel:</label>
+                                <input class='nes-input' id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_url">url:</label>
+                                <input class='nes-input' id="altinn_url" name="url" type="text" value="https://dev.nav.no">
+                            </div>
+                            
+                            <button class='nes-btn is-primary'>send</button>
+                        </form>
+                    </section>
+                    <section class="nes-container with-title">
+                        <h2 class='title'>Mottakere: altinn reportee</h2>
                      
-                    <form method="post" action="/opprett_sak_servicecode">
-                        <label for="altinn_vnr">Virksomhetsnummer:</label>
-                        <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
-                        
-                        <label for="altinn_scode">Service code:</label>
-                        <input id="altinn_scode" name="scode" type="text" value="4936"><br>
-                        
-                        <label for="altinn_sedit">Service edition:</label>
-                        <input id="altinn_sedit" name="sedit" type="text" value="1"><br>
-                        
-                        <label for="altinn_tekst">Tittel:</label>
-                        <input id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"><br>
-                        
-                        <label for="altinn_url">url:</label>
-                        <input id="altinn_url" name="url" type="text" value="https://dev.nav.no"><br>
-                        
-                        
-                        <input type="submit" value="send">
-                    </form>
-                </div>
-                <div style="margin: 2em">
-                     Opprett sak: rolle <br>
+                        <form method="post" action="/opprett_sak_reportee">
+                            <div class='nes-field'>
+                                <label for="altinn_vnr">Virksomhetsnummer:</label>
+                                <input class='nes-input' id="altinn_vnr" name="vnr" type="text" value="910825526">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="fnr">altinn reportee:</label>
+                                <input class='nes-input' id="fnr" name="fnr" type="text" value="16120101181">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_tekst">Tittel:</label>
+                                <input class='nes-input' id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_url">url:</label>
+                                <input class='nes-input' id="altinn_url" name="url" type="text" value="https://dev.nav.no">
+                            </div>
+                            <button class='nes-btn is-primary'>send</button>
+                        </form>
+                    </section>
+                    <section class="nes-container with-title">
+                        <h2 class='title'>Mottakere: nærmeste leder</h2>
                      
-                    <form method="post" action="/opprett_sak_rolle">
-                        <label for="altinn_vnr">Virksomhetsnummer:</label>
-                        <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
-                        
-                        <label for="altinn_rcode">altinn rollekode:</label>
-                        <input id="altinn_rcode" name="rcode" type="text" value="DAGL"><br>
-                        
-                        <label for="altinn_tekst">Tittel:</label>
-                        <input id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"><br>
-                        
-                        <label for="altinn_url">url:</label>
-                        <input id="altinn_url" name="url" type="text" value="https://dev.nav.no"><br>
-                        
-                        
-                        <input type="submit" value="send">
-                    </form>
-                </div>
-                <div style="margin: 2em">
-                     Opprett sak: reportee <br>
-                     
-                    <form method="post" action="/opprett_sak_reportee">
-                        <label for="altinn_vnr">Virksomhetsnummer:</label>
-                        <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
-                        
-                        <label for="fnr">altinn reportee:</label>
-                        <input id="fnr" name="fnr" type="text" value="16120101181"><br>
-                        
-                        <label for="altinn_tekst">Tittel:</label>
-                        <input id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"><br>
-                        
-                        <label for="altinn_url">url:</label>
-                        <input id="altinn_url" name="url" type="text" value="https://dev.nav.no"><br>
-                        
-                        
-                        <input type="submit" value="send">
-                    </form>
-                </div>
-                <div style="margin: 2em">
-                     Opprett sak: nærmeste leder <br>
-                     
-                    <form method="post" action="/opprett_sak_digisyfo">
-                        <label for="altinn_vnr">Virksomhetsnummer:</label>
-                        <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
-                        
-                        <label for="fnrleder">Fnr leder:</label>
-                        <input id="fnrleder" name="fnrleder" type="text" value=""><br>
-                        
-                        <label for="fnrsyk">Fnr sykmeldt:</label>
-                        <input id="fnrsyk" name="fnrsyk" type="text" value=""><br>
-                        
-                        <label for="altinn_tekst">Tittel:</label>
-                        <input id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"><br>
-                        
-                        <label for="altinn_url">url:</label>
-                        <input id="altinn_url" name="url" type="text" value="https://dev.nav.no"><br>
-                        
-                        
-                        <input type="submit" value="send">
-                    </form>
-                </div>
+                        <form method="post" action="/opprett_sak_digisyfo">
+                            <div class='nes-field'>
+                                <label for="altinn_vnr">Virksomhetsnummer:</label>
+                                <input class='nes-input' id="altinn_vnr" name="vnr" type="text" value="910825526">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="fnrleder">Fnr leder:</label>
+                                <input class='nes-input' id="fnrleder" name="fnrleder" type="text" value="">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="fnrsyk">Fnr sykmeldt:</label>
+                                <input class='nes-input' id="fnrsyk" name="fnrsyk" type="text" value="">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_tekst">Tittel:</label>
+                                <input class='nes-input' id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding">
+                            </div>
+                            <div class='nes-field'>
+                                <label for="altinn_url">url:</label>
+                                <input class='nes-input' id="altinn_url" name="url" type="text" value="https://dev.nav.no">
+                            </div>
+                            
+                            <button class='nes-btn is-primary'>send</button>
+                        </form>
+                    </section>
+                </section>
             </body>
         </html>
     """
@@ -569,12 +646,22 @@ fun okPage(utfall: String): String =
         <html>
             <head>
                 <title>Notifikasjon forsøkt sendt</title>
+                <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
+                <link href="https://unpkg.com/nes.css/css/nes.css" rel="stylesheet" />
+            
+                <style>
+                  html, body, pre, code, kbd, samp {
+                      font-family: "Press Start 2P",serif;
+                  }
+                </style>
             </head>
             <body>
-                <h1>Svar fra produsent-api:</h1>
-                $utfall
-                <br>
-                <a href="/">lag ny notifikasjon</a>
+                <section class="nes-container with-title" style='overflow: scroll'>
+                    <h1 class='title'>Svar fra produsent-api:</h1>
+                    $utfall
+                    <br/>
+                    <a href="/">lag ny notifikasjon</a>
+                </section>
             </body>
         </html>
         
@@ -583,7 +670,7 @@ fun okPage(utfall: String): String =
 fun nyOppgave(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NyOppgave(${ vars.joinToString(" ") { "$$it: String!" } }) {
+        mutation NyOppgave(${vars.joinToString(" ") { "$$it: String!" }}) {
             nyOppgave(
                 nyOppgave: {
                     metadata: {
@@ -618,10 +705,22 @@ const val errorPage: String =
         <html>
             <head>
                 <title> error </title>
+                <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
+                <link href="https://unpkg.com/nes.css/css/nes.css" rel="stylesheet" />
+            
+                <style>
+                  html, body, pre, code, kbd, samp {
+                      font-family: "Press Start 2P",serif;
+                  }
+                </style>
             </head>
             <body>
-                error :( se log
-                <a href="/">hovedside</a>
+                <section class="nes-container with-title" style='overflow: scroll'>
+                    <h1 class='title'>Error</h1>
+                    :( se log
+                    <br/>
+                    <a href="/">hovedside</a>
+                </section>
             </body>
         </html>
     """
@@ -629,7 +728,7 @@ const val errorPage: String =
 fun nyBeskjed(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NyBeskjed(${ vars.joinToString(" ") { "${'$'}$it: String!" } }) {
+        mutation NyBeskjed(${vars.joinToString(" ") { "${'$'}$it: String!" }}) {
             nyBeskjed(
                 nyBeskjed: {
                     metadata: {
@@ -662,7 +761,7 @@ fun nyBeskjed(vars: List<String>, mottaker: String): String =
 fun nySak(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NySak(${ vars.joinToString(" ") { "${'$'}$it: String!" } }) {
+        mutation NySak(${vars.joinToString(" ") { "${'$'}$it: String!" }}) {
             nySak(
                 grupperingsid: "${java.util.UUID.randomUUID()}"
                 merkelapp: "fager"
