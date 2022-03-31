@@ -79,40 +79,6 @@ fun main() {
                 }
             }
 
-            post("/opprett_sak") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val vnr = formParameters["vnr"].toString()
-                    val tittel = formParameters["tittel"].toString()
-                    val url = formParameters["url"].toString()
-                    val serviceCode = formParameters["scode"].toString()
-                    val serviceEdition = formParameters["sedit"].toString()
-
-                    val variables = mapOf(
-                        "vnr" to vnr,
-                        "tittel" to tittel,
-                        "url" to url,
-                        "serviceCode" to serviceCode,
-                        "serviceEdition" to serviceEdition,
-                    )
-
-                    val mottaker = """
-                        altinn: {
-                            serviceCode: ${'$'}serviceCode
-                            serviceEdition: ${'$'}serviceEdition
-                        }
-                    """
-                    val utfall = opprettNySak(
-                        variables = variables,
-                        mottaker = mottaker,
-                    )
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
-            }
-
             post("/submit_digisyfo") {
                 try {
                     val formParameters = call.receiveParameters()
@@ -186,7 +152,6 @@ fun main() {
                     val url = formParameters["url"].toString()
                     val type = formParameters["type"].toString()
 
-
                     val variables = mapOf(
                         "vnr" to vnr,
                         "fnr" to fnr,
@@ -201,6 +166,131 @@ fun main() {
                     """
                     val utfall = sendNotifikasjon(
                         type = type,
+                        variables = variables,
+                        mottaker = mottaker,
+                    )
+                    call.respondHtml(okPage(utfall))
+                } catch (e: Exception) {
+                    log.error("unexpected exception", e)
+                    call.respondHtml(errorPage)
+                }
+            }
+            post("/opprett_sak_servicecode") {
+                try {
+                    val formParameters = call.receiveParameters()
+                    val vnr = formParameters["vnr"].toString()
+                    val tittel = formParameters["tittel"].toString()
+                    val url = formParameters["url"].toString()
+                    val serviceCode = formParameters["scode"].toString()
+                    val serviceEdition = formParameters["sedit"].toString()
+
+                    val variables = mapOf(
+                        "vnr" to vnr,
+                        "tittel" to tittel,
+                        "url" to url,
+                        "serviceCode" to serviceCode,
+                        "serviceEdition" to serviceEdition,
+                    )
+
+                    val mottaker = """
+                        altinn: {
+                            serviceCode: ${'$'}serviceCode
+                            serviceEdition: ${'$'}serviceEdition
+                        }
+                    """
+                    val utfall = opprettNySak(
+                        variables = variables,
+                        mottaker = mottaker,
+                    )
+                    call.respondHtml(okPage(utfall))
+                } catch (e: Exception) {
+                    log.error("unexpected exception", e)
+                    call.respondHtml(errorPage)
+                }
+            }
+            post("/opprett_sak_rolle") {
+                try {
+                    val formParameters = call.receiveParameters()
+                    val vnr = formParameters["vnr"].toString()
+                    val tittel = formParameters["tittel"].toString()
+                    val url = formParameters["url"].toString()
+                    val roleDefinitionCode = formParameters["rcode"].toString()
+
+                    val variables = mapOf(
+                        "vnr" to vnr,
+                        "tittel" to tittel,
+                        "url" to url,
+                        "roleDefinitionCode" to roleDefinitionCode,
+                    )
+
+                    val mottaker = """
+                        altinnRolle: {
+                            roleDefinitionCode: ${'$'}roleDefinitionCode
+                        }
+                    """
+                    val utfall = opprettNySak(
+                        variables = variables,
+                        mottaker = mottaker,
+                    )
+                    call.respondHtml(okPage(utfall))
+                } catch (e: Exception) {
+                    log.error("unexpected exception", e)
+                    call.respondHtml(errorPage)
+                }
+            }
+            post("/opprett_sak_reportee") {
+                try {
+                    val formParameters = call.receiveParameters()
+                    val vnr = formParameters["vnr"].toString()
+                    val fnr = formParameters["fnr"].toString()
+                    val tekst = formParameters["tittel"].toString()
+                    val url = formParameters["url"].toString()
+
+                    val variables = mapOf(
+                        "vnr" to vnr,
+                        "fnr" to fnr,
+                        "tittel" to tekst,
+                        "url" to url,
+                    )
+
+                    val mottaker = """
+                        altinnReportee: {
+                            fnr: ${'$'}fnr
+                        }
+                    """
+                    val utfall = opprettNySak(
+                        variables = variables,
+                        mottaker = mottaker,
+                    )
+                    call.respondHtml(okPage(utfall))
+                } catch (e: Exception) {
+                    log.error("unexpected exception", e)
+                    call.respondHtml(errorPage)
+                }
+            }
+            post("/opprett_sak_digisyfo") {
+                try {
+                    val formParameters = call.receiveParameters()
+                    val vnr = formParameters["vnr"].toString()
+                    val tittel = formParameters["tittel"].toString()
+                    val url = formParameters["url"].toString()
+                    val fnrLeder = formParameters["fnrleder"].toString()
+                    val fnrSykmeldt = formParameters["fnrsyk"].toString()
+
+                    val variables = mapOf(
+                        "vnr" to vnr,
+                        "tittel" to tittel,
+                        "url" to url,
+                        "fnrLeder" to fnrLeder,
+                        "fnrSykmeldt" to fnrSykmeldt
+                    )
+                    val mottaker = """
+                        naermesteLeder: {
+                            naermesteLederFnr: ${'$'}fnrLeder
+                            ansattFnr: ${'$'}fnrSykmeldt
+                        }
+                    """
+                    val utfall = opprettNySak(
                         variables = variables,
                         mottaker = mottaker,
                     )
@@ -384,9 +474,9 @@ const val sendPage: String =
                     </form>
                 </div>
                 <div style="margin: 2em">
-                     Opprett ny sak <br>
+                     Opprett sak: tjeneste <br>
                      
-                    <form method="post" action="/opprett_sak">
+                    <form method="post" action="/opprett_sak_servicecode">
                         <label for="altinn_vnr">Virksomhetsnummer:</label>
                         <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
                         
@@ -395,6 +485,69 @@ const val sendPage: String =
                         
                         <label for="altinn_sedit">Service edition:</label>
                         <input id="altinn_sedit" name="sedit" type="text" value="1"><br>
+                        
+                        <label for="altinn_tekst">Tittel:</label>
+                        <input id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"><br>
+                        
+                        <label for="altinn_url">url:</label>
+                        <input id="altinn_url" name="url" type="text" value="https://dev.nav.no"><br>
+                        
+                        
+                        <input type="submit" value="send">
+                    </form>
+                </div>
+                <div style="margin: 2em">
+                     Opprett sak: rolle <br>
+                     
+                    <form method="post" action="/opprett_sak_rolle">
+                        <label for="altinn_vnr">Virksomhetsnummer:</label>
+                        <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
+                        
+                        <label for="altinn_rcode">altinn rollekode:</label>
+                        <input id="altinn_rcode" name="rcode" type="text" value="DAGL"><br>
+                        
+                        <label for="altinn_tekst">Tittel:</label>
+                        <input id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"><br>
+                        
+                        <label for="altinn_url">url:</label>
+                        <input id="altinn_url" name="url" type="text" value="https://dev.nav.no"><br>
+                        
+                        
+                        <input type="submit" value="send">
+                    </form>
+                </div>
+                <div style="margin: 2em">
+                     Opprett sak: reportee <br>
+                     
+                    <form method="post" action="/opprett_sak_reportee">
+                        <label for="altinn_vnr">Virksomhetsnummer:</label>
+                        <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
+                        
+                        <label for="fnr">altinn reportee:</label>
+                        <input id="fnr" name="fnr" type="text" value="16120101181"><br>
+                        
+                        <label for="altinn_tekst">Tittel:</label>
+                        <input id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"><br>
+                        
+                        <label for="altinn_url">url:</label>
+                        <input id="altinn_url" name="url" type="text" value="https://dev.nav.no"><br>
+                        
+                        
+                        <input type="submit" value="send">
+                    </form>
+                </div>
+                <div style="margin: 2em">
+                     Opprett sak: nærmeste leder <br>
+                     
+                    <form method="post" action="/opprett_sak_digisyfo">
+                        <label for="altinn_vnr">Virksomhetsnummer:</label>
+                        <input id="altinn_vnr" name="vnr" type="text" value="910825526"><br>
+                        
+                        <label for="fnrleder">Fnr leder:</label>
+                        <input id="fnrleder" name="fnrleder" type="text" value=""><br>
+                        
+                        <label for="fnrsyk">Fnr sykmeldt:</label>
+                        <input id="fnrsyk" name="fnrsyk" type="text" value=""><br>
                         
                         <label for="altinn_tekst">Tittel:</label>
                         <input id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"><br>
