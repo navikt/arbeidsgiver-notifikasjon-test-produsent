@@ -300,6 +300,32 @@ fun main() {
                     call.respondHtml(errorPage)
                 }
             }
+            post("/hard_delete_notifikasjon") {
+                try {
+                    val formParameters = call.receiveParameters()
+                    val utfall = executeGraphql(
+                        hardDeleteNotifikasjon(),
+                        mapOf("id" to formParameters["id"].toString())
+                    )
+                    call.respondHtml(okPage(utfall))
+                } catch (e: Exception) {
+                    log.error("unexpected exception", e)
+                    call.respondHtml(errorPage)
+                }
+            }
+            post("/hard_delete_sak") {
+                try {
+                    val formParameters = call.receiveParameters()
+                    val utfall = executeGraphql(
+                        hardDeleteSak(),
+                        mapOf("id" to formParameters["id"].toString())
+                    )
+                    call.respondHtml(okPage(utfall))
+                } catch (e: Exception) {
+                    log.error("unexpected exception", e)
+                    call.respondHtml(errorPage)
+                }
+            }
         }
     }.start(wait = true)
 }
@@ -529,6 +555,17 @@ const val sendPage: String =
                             <button class='nes-btn is-primary'>send</button>
                         </form>
                     </section>
+                    <section class="nes-container with-title">
+                        <h2 class='title'>Hard Delete notifikasjon</h2>
+                         
+                        <form method="post" action="/hard_delete_notifikasjon">
+                            <div class='nes-field'>
+                                <label for="id">id:</label>
+                                <input class='nes-input' id="id" name="id" type="text" value="">
+                            </div>
+                            <button class='nes-btn is-error'>slett</button>
+                        </form>
+                    </section>
                 </section>
                 <section class="nes-container with-title" style='overflow: scroll; width: 50vw'>
                     <h1>Opprett sak</h1>
@@ -633,6 +670,17 @@ const val sendPage: String =
                             </div>
                             
                             <button class='nes-btn is-primary'>send</button>
+                        </form>
+                    </section>
+                    <section class="nes-container with-title">
+                        <h2 class='title'>Hard Delete sak</h2>
+                         
+                        <form method="post" action="/hard_delete_sak">
+                            <div class='nes-field'>
+                                <label for="id">id:</label>
+                                <input class='nes-input' id="id" name="id" type="text" value="">
+                            </div>
+                            <button class='nes-btn is-error'>slett</button>
                         </form>
                     </section>
                 </section>
@@ -758,6 +806,19 @@ fun nyBeskjed(vars: List<String>, mottaker: String): String =
         }
     """
 
+fun hardDeleteNotifikasjon(): String =
+    // language=GraphQL
+    """
+     mutation SlettNotifikasjon(${'$'}id: ID!){
+        hardDeleteNotifikasjon(id: ${'$'}id) {
+            __typename
+            ... on Error {
+                feilmelding
+            }
+        }
+     }
+    """.trimIndent()
+
 fun nySak(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
@@ -785,3 +846,17 @@ fun nySak(vars: List<String>, mottaker: String): String =
             }
         }
     """
+
+fun hardDeleteSak(): String =
+    // language=GraphQL
+    """
+     mutation SlettSak(${'$'}id: ID!){
+        hardDeleteSak(id: ${'$'}id) {
+            __typename
+            ... on Error {
+                feilmelding
+            }
+        }
+     }
+    """.trimIndent()
+
