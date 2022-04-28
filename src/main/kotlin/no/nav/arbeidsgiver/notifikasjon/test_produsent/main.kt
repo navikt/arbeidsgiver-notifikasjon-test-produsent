@@ -190,12 +190,10 @@ fun main() {
             }
             handleForm("/oppdater_sak"){ form->
                 oppdaterStatusTilSak(
-                    mapOf(
-                        "id" to form["id"].toString(),
-                        "nyLenkeTilSak" to form["nyLenkeTilSak"].toString(),
-                        "nyStatus" to form["nyStatus"].toString(),
-                        "nyTekst" to form["nyText"].toString()
-                    )
+                    id = form["id"].toString(),
+                    nyLenkeTilSak = form["nyLenkeTilSak"].toString(),
+                    nyStatus = form["nyStatus"].toString(),
+                    nyTekst = form["nyText"].toString()
                 )
             }
             handleForm("/hard_delete_notifikasjon") { form ->
@@ -218,8 +216,33 @@ suspend fun opprettNySak(variables: Map<String, String>, mottaker: String): Stri
     return executeGraphql(nySak(variables.keys.toList(), mottaker), variables)
 }
 
-suspend fun oppdaterStatusTilSak(variables: Map<String, String>): String{
-    return executeGraphql(oppdaterSak(variables.keys.toList()), variables)
+suspend fun oppdaterStatusTilSak(id: String, nyLenkeTilSak: String, nyTekst: String, nyStatus: String): String{
+
+    return executeGraphql(
+        """
+            mutation OppdaterSak(
+                ${'$'}id: ID!, 
+                ${'$'}nyStatus: String!, 
+                ${'$'}nyTekst: String!, 
+                ${'$'}nyLenkeTilSak: String!
+            ){
+                nyStatusSak(
+                    id: ${'$'}id
+                    ny_status: ${'$'}nyStatus
+                    overstyrStatustekstMed: ${'$'}nyTekst
+                    nyLenkeTilSak: ${'$'}nyLenkeTilSak
+                ){
+                    __typename
+                    ... on Error{
+                        feilmelding
+                    }
+                    ... on NyStatusSakVellykket{
+                      id
+                    }
+                }
+            }
+        """, mapOf("id" to id, "nyStatus" to nyStatus, "nyTekst" to nyTekst, "nyLenkeTilSak" to nyLenkeTilSak)
+    )
 
 }
 
@@ -585,27 +608,6 @@ fun nySak(vars: List<String>, mottaker: String): String =
                 }
                 ... on Error {
                     feilmelding
-                }
-            }
-        }
-    """
-
-fun oppdaterSak(vars: List<String>): String =
-    // language=GraphQL
-    """
-        mutation OppdaterSak(${vars.graphQLParameters()}){
-            nyStatusSak(
-                id: ${'$'}id
-                ny_status: ${'$'}nyStatus
-                overstyrStatustekstMed: ${'$'}nyTekst
-                nyLenkeTilSak: ${'$'}nyLenkeTilSak
-            ){
-                __typename
-                ... on Error{
-                    feilmelding
-                }
-                ... on NyStatusSakVellykket{
-                  id
                 }
             }
         }
