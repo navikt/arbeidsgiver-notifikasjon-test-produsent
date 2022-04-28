@@ -123,6 +123,7 @@ fun main() {
                         """,
                 )
             }
+
             handleForm("/opprett_sak_servicecode") { form ->
                 opprettNySak(
                     variables = mapOf(
@@ -385,9 +386,9 @@ val sendPage: String =
                     <h1>Opprett sak</h1>
                     ${inputSection("Mottakere: altinn tjeneste","/opprett_sak_servicecode"){
                         """
-                        ${inputs( "altinn_vnr","Virksomhetsnummer", "910825526")}
-                        ${inputs("altinn_scode", "Service code", "4936")}
-                        ${inputs("altinn_sedit", "Service edition", "1")}
+                        ${inputs( "vnr","Virksomhetsnummer", "910825526")}
+                        ${inputs("scode", "Service code", "4936")}
+                        ${inputs("sedit", "Service edition", "1")}
                         ${inputs("tittel", "Tekst", "Dette er en test-melding")}
                         ${inputs("url", "url", "https://dev.nav.no")}
                         """
