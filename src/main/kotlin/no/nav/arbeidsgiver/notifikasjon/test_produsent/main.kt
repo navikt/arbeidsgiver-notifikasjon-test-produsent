@@ -222,7 +222,7 @@ suspend fun oppdaterStatusTilSak(id: String, nyLenkeTilSak: String, nyTekst: Str
         """
             mutation OppdaterSak(
                 ${'$'}id: ID!, 
-                ${'$'}nyStatus: String!, 
+                ${'$'}nyStatus: SaksStatus!, 
                 ${'$'}nyTekst: String!, 
                 ${'$'}nyLenkeTilSak: String!
             ){
