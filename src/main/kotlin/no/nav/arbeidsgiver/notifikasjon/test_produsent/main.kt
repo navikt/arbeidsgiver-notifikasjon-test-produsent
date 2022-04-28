@@ -16,6 +16,7 @@ import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import org.slf4j.LoggerFactory
+import java.util.UUID
 
 val objectMapper = jacksonObjectMapper()
 
@@ -29,9 +30,20 @@ suspend fun ApplicationCall.respondHtml(html: String) {
         text = html,
     )
 }
+fun Route.handleForm(path: String, body: suspend (Parameters) -> String) {
+    post(path){
+        try {
+            val formParameters = call.receiveParameters()
+            val result = body(formParameters)
+            call.respondHtml(okPage(result))
+        } catch (e: Exception) {
+            log.error("unexpected exception", e)
+            call.respondHtml(errorPage)
+        }
+    }
+}
 
 fun main() {
-
 
     embeddedServer(Netty, port = 8080) {
         routing {
@@ -43,288 +55,159 @@ fun main() {
                 call.respondHtml(sendPage)
             }
 
-            post("/submit_altinn") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val vnr = formParameters["vnr"].toString()
-                    val tekst = formParameters["tekst"].toString()
-                    val url = formParameters["url"].toString()
-                    val type = formParameters["type"].toString()
-                    val serviceCode = formParameters["scode"].toString()
-                    val serviceEdition = formParameters["sedit"].toString()
+            handleForm("/submit_altinn") { form ->
 
-                    val variables = mapOf(
-                        "vnr" to vnr,
-                        "tekst" to tekst,
-                        "url" to url,
-                        "serviceCode" to serviceCode,
-                        "serviceEdition" to serviceEdition,
-                    )
-
-                    val mottaker = """
+                sendNotifikasjon(
+                    type = form["type"].toString(),
+                    variables = mapOf(
+                        "vnr" to form["vnr"].toString(),
+                        "tekst" to form["tekst"].toString(),
+                        "url" to form["url"].toString(),
+                        "serviceCode" to form["scode"].toString(),
+                        "serviceEdition" to form["sedit"].toString(),
+                    ),
+                    mottaker = """
                         altinn: {
                             serviceCode: ${'$'}serviceCode
                             serviceEdition: ${'$'}serviceEdition
                         }
-                    """
-                    val utfall = sendNotifikasjon(
-                        type = type,
-                        variables = variables,
-                        mottaker = mottaker,
-                    )
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
+                    """,
+                )
             }
 
-            post("/submit_digisyfo") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val vnr = formParameters["vnr"].toString()
-                    val tekst = formParameters["tekst"].toString()
-                    val url = formParameters["url"].toString()
-                    val type = formParameters["type"].toString()
-                    val fnrLeder = formParameters["fnrleder"].toString()
-                    val fnrSykmeldt = formParameters["fnrsyk"].toString()
-
-                    val variables = mapOf(
-                        "vnr" to vnr,
-                        "tekst" to tekst,
-                        "url" to url,
-                        "fnrLeder" to fnrLeder,
-                        "fnrSykmeldt" to fnrSykmeldt
+            handleForm("/submit_digisyfo") { form ->
+                sendNotifikasjon(
+                    type = form["type"].toString(), mottaker = """
+                            naermesteLeder: {
+                                naermesteLederFnr: ${'$'}fnrLeder
+                                ansattFnr: ${'$'}fnrSykmeldt
+                            }
+                        """, variables = mapOf(
+                        "vnr" to form["vnr"].toString(),
+                        "tekst" to form["tekst"].toString(),
+                        "url" to form["url"].toString(),
+                        "fnrLeder" to form["fnrleder"].toString(),
+                        "fnrSykmeldt" to form["fnrsyk"].toString()
                     )
-                    val mottaker = """
-                        naermesteLeder: {
-                            naermesteLederFnr: ${'$'}fnrLeder
-                            ansattFnr: ${'$'}fnrSykmeldt
-                        }
-                    """
-                    val utfall = sendNotifikasjon(type = type, mottaker = mottaker, variables = variables)
-
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
+                )
             }
-            post("/submit_altinn_rolle") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val vnr = formParameters["vnr"].toString()
-                    val tekst = formParameters["tekst"].toString()
-                    val url = formParameters["url"].toString()
-                    val type = formParameters["type"].toString()
-                    val roleDefinitionCode = formParameters["rcode"].toString()
-
-
-                    val variables = mapOf(
-                        "vnr" to vnr,
-                        "tekst" to tekst,
-                        "url" to url,
-                        "roleDefinitionCode" to roleDefinitionCode,
-                    )
-
-                    val mottaker = """
-                        altinnRolle: {
-                            roleDefinitionCode: ${'$'}roleDefinitionCode
-                        }
-                    """
-                    val utfall = sendNotifikasjon(
-                        type = type,
-                        variables = variables,
-                        mottaker = mottaker,
-                    )
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
+            handleForm("/submit_altinn_rolle") { form ->
+                sendNotifikasjon(
+                    type = form["type"].toString(),
+                    variables = mapOf(
+                        "vnr" to form["vnr"].toString(),
+                        "tekst" to form["tekst"].toString(),
+                        "url" to form["url"].toString(),
+                        "roleDefinitionCode" to form["rcode"].toString(),
+                    ),
+                    mottaker = """
+                            altinnRolle: {
+                                roleDefinitionCode: ${'$'}roleDefinitionCode
+                            }
+                        """,
+                )
             }
-            post("/submit_altinn_reportee") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val vnr = formParameters["vnr"].toString()
-                    val fnr = formParameters["fnr"].toString()
-                    val tekst = formParameters["tekst"].toString()
-                    val url = formParameters["url"].toString()
-                    val type = formParameters["type"].toString()
-
-                    val variables = mapOf(
-                        "vnr" to vnr,
-                        "fnr" to fnr,
-                        "tekst" to tekst,
-                        "url" to url,
-                    )
-
-                    val mottaker = """
-                        altinnReportee: {
-                            fnr: ${'$'}fnr
-                        }
-                    """
-                    val utfall = sendNotifikasjon(
-                        type = type,
-                        variables = variables,
-                        mottaker = mottaker,
-                    )
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
+            handleForm("/submit_altinn_reportee") { form ->
+                sendNotifikasjon(
+                    type = form["type"].toString(),
+                    variables = mapOf(
+                        "vnr" to form["vnr"].toString(),
+                        "fnr" to form["fnr"].toString(),
+                        "tekst" to form["tekst"].toString(),
+                        "url" to form["url"].toString(),
+                    ),
+                    mottaker = """
+                            altinnReportee: {
+                                fnr: ${'$'}fnr
+                            }
+                        """,
+                )
             }
-            post("/opprett_sak_servicecode") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val vnr = formParameters["vnr"].toString()
-                    val tittel = formParameters["tittel"].toString()
-                    val url = formParameters["url"].toString()
-                    val serviceCode = formParameters["scode"].toString()
-                    val serviceEdition = formParameters["sedit"].toString()
-
-                    val variables = mapOf(
-                        "vnr" to vnr,
-                        "tittel" to tittel,
-                        "url" to url,
-                        "serviceCode" to serviceCode,
-                        "serviceEdition" to serviceEdition,
-                    )
-
-                    val mottaker = """
-                        altinn: {
-                            serviceCode: ${'$'}serviceCode
-                            serviceEdition: ${'$'}serviceEdition
-                        }
-                    """
-                    val utfall = opprettNySak(
-                        variables = variables,
-                        mottaker = mottaker,
-                    )
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
+            handleForm("/opprett_sak_servicecode") { form ->
+                opprettNySak(
+                    variables = mapOf(
+                        "vnr" to form["vnr"].toString(),
+                        "tittel" to form["tittel"].toString(),
+                        "url" to form["url"].toString(),
+                        "serviceCode" to form["scode"].toString(),
+                        "serviceEdition" to form["sedit"].toString(),
+                    ),
+                    mottaker = """
+                            altinn: {
+                                serviceCode: ${'$'}serviceCode
+                                serviceEdition: ${'$'}serviceEdition
+                            }
+                        """,
+                )
             }
-            post("/opprett_sak_rolle") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val vnr = formParameters["vnr"].toString()
-                    val tittel = formParameters["tittel"].toString()
-                    val url = formParameters["url"].toString()
-                    val roleDefinitionCode = formParameters["rcode"].toString()
-
-                    val variables = mapOf(
-                        "vnr" to vnr,
-                        "tittel" to tittel,
-                        "url" to url,
-                        "roleDefinitionCode" to roleDefinitionCode,
-                    )
-
-                    val mottaker = """
-                        altinnRolle: {
-                            roleDefinitionCode: ${'$'}roleDefinitionCode
-                        }
-                    """
-                    val utfall = opprettNySak(
-                        variables = variables,
-                        mottaker = mottaker,
-                    )
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
+            handleForm("/opprett_sak_rolle") { form ->
+                opprettNySak(
+                    variables = mapOf(
+                        "vnr" to form["vnr"].toString(),
+                        "tittel" to form["tittel"].toString(),
+                        "url" to form["url"].toString(),
+                        "roleDefinitionCode" to form["rcode"].toString(),
+                    ),
+                    mottaker = """
+                            altinnRolle: {
+                                roleDefinitionCode: ${'$'}roleDefinitionCode
+                            }
+                        """,
+                )
             }
-            post("/opprett_sak_reportee") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val vnr = formParameters["vnr"].toString()
-                    val fnr = formParameters["fnr"].toString()
-                    val tekst = formParameters["tittel"].toString()
-                    val url = formParameters["url"].toString()
-
-                    val variables = mapOf(
-                        "vnr" to vnr,
-                        "fnr" to fnr,
-                        "tittel" to tekst,
-                        "url" to url,
-                    )
-
-                    val mottaker = """
-                        altinnReportee: {
-                            fnr: ${'$'}fnr
-                        }
-                    """
-                    val utfall = opprettNySak(
-                        variables = variables,
-                        mottaker = mottaker,
-                    )
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
+            handleForm("/opprett_sak_reportee") { form ->
+                opprettNySak(
+                    variables = mapOf(
+                        "vnr" to form["vnr"].toString(),
+                        "fnr" to form["fnr"].toString(),
+                        "tittel" to form["tittel"].toString(),
+                        "url" to form["url"].toString(),
+                    ),
+                    mottaker = """
+                            altinnReportee: {
+                                fnr: ${'$'}fnr
+                            }
+                        """,
+                )
             }
-            post("/opprett_sak_digisyfo") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val vnr = formParameters["vnr"].toString()
-                    val tittel = formParameters["tittel"].toString()
-                    val url = formParameters["url"].toString()
-                    val fnrLeder = formParameters["fnrleder"].toString()
-                    val fnrSykmeldt = formParameters["fnrsyk"].toString()
-
-                    val variables = mapOf(
-                        "vnr" to vnr,
-                        "tittel" to tittel,
-                        "url" to url,
-                        "fnrLeder" to fnrLeder,
-                        "fnrSykmeldt" to fnrSykmeldt
-                    )
-                    val mottaker = """
-                        naermesteLeder: {
-                            naermesteLederFnr: ${'$'}fnrLeder
-                            ansattFnr: ${'$'}fnrSykmeldt
-                        }
-                    """
-                    val utfall = opprettNySak(
-                        variables = variables,
-                        mottaker = mottaker,
-                    )
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
+            handleForm("/opprett_sak_digisyfo") { form ->
+                opprettNySak(
+                    variables = mapOf(
+                        "vnr" to form["vnr"].toString(),
+                        "tittel" to form["tittel"].toString(),
+                        "url" to form["url"].toString(),
+                        "fnrLeder" to form["fnrleder"].toString(),
+                        "fnrSykmeldt" to form["fnrsyk"].toString()
+                    ),
+                    mottaker = """
+                            naermesteLeder: {
+                                naermesteLederFnr: ${'$'}fnrLeder
+                                ansattFnr: ${'$'}fnrSykmeldt
+                            }
+                        """,
+                )
             }
-            post("/hard_delete_notifikasjon") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val utfall = executeGraphql(
-                        hardDeleteNotifikasjon(),
-                        mapOf("id" to formParameters["id"].toString())
+            handleForm("/oppdater_sak"){ form->
+                oppdaterStatusTilSak(
+                    mapOf(
+                        "id" to form["id"].toString(),
+                        "nyLenkeTilSak" to form["nyLenkeTilSak"].toString(),
+                        "nyStatus" to form["nyStatus"].toString(),
+                        "nyTekst" to form["nyText"].toString()
                     )
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
+                )
             }
-            post("/hard_delete_sak") {
-                try {
-                    val formParameters = call.receiveParameters()
-                    val utfall = executeGraphql(
-                        hardDeleteSak(),
-                        mapOf("id" to formParameters["id"].toString())
-                    )
-                    call.respondHtml(okPage(utfall))
-                } catch (e: Exception) {
-                    log.error("unexpected exception", e)
-                    call.respondHtml(errorPage)
-                }
+            handleForm("/hard_delete_notifikasjon") { form ->
+                executeGraphql(
+                    hardDeleteNotifikasjon(),
+                    mapOf("id" to form["id"].toString())
+                )
+            }
+            handleForm("/hard_delete_sak") { form ->
+                executeGraphql(
+                    hardDeleteSak(),
+                    mapOf("id" to form["id"].toString())
+                )
             }
         }
     }.start(wait = true)
@@ -332,6 +215,11 @@ fun main() {
 
 suspend fun opprettNySak(variables: Map<String, String>, mottaker: String): String {
     return executeGraphql(nySak(variables.keys.toList(), mottaker), variables)
+}
+
+suspend fun oppdaterStatusTilSak(variables: Map<String, String>): String{
+    return executeGraphql(oppdaterSak(variables.keys.toList()), variables)
+
 }
 
 suspend fun sendNotifikasjon(type: String, mottaker: String, variables: Map<String, String>): String {
@@ -365,6 +253,55 @@ suspend fun executeGraphql(query: String, variables: Map<String, String>): Strin
         )
     )
 }
+// language=HTML
+fun inputs(name: String, inpLabel: String, inpValue: String = ""): String {
+    val id: String = UUID.randomUUID().toString()
+    return """
+    <div class='nes-field'>
+        <label for="${id}">${inpLabel}:</label>
+        <input class='nes-input' id="${id}" name="${name}" type="text" value="${inpValue}" >
+    </div>
+    """
+}
+
+
+// language=HTML
+fun notifikasjonstypevalg( ):String{
+    val beskjedId = UUID.randomUUID().toString()
+    val oppgaveId = UUID.randomUUID().toString()
+    return """
+        <section class="nes-container with-title">
+            <h3 class='title'>Notifikasjonstype</h3>
+            <label for="${beskjedId}">
+                <input type="radio" class='nes-radio' id="${beskjedId}" name="type" value="beskjed" checked> 
+                <span>beskjed</span>
+            </label>
+            <label for="${oppgaveId}">
+                <input type="radio" class='nes-radio' id="${oppgaveId}" name="type" value="oppgave">
+                <span>oppgave</span>
+            </label>
+        </section>
+        """
+}
+
+// language=HTML
+fun inputSection(
+    tittel: String,
+    action: String,
+    knapp:String = "send",
+    buttonType: String = "is-primary",
+    body: () -> String
+):String{
+    return """
+    <section class="nes-container with-title">
+        <h2 class='title'>${tittel}</h2>
+        <form method="post" action="${action}">
+            ${body()}
+            <button class='nes-btn ${buttonType}'>${knapp}</button>
+        </form>
+    </section>
+    """
+}
 
 suspend fun getAccessToken(): String {
     val tokenEndpoint = System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT")!!
@@ -388,9 +325,8 @@ suspend fun getAccessToken(): String {
     return map["access_token"] as String
 }
 
-
 // language=HTML
-const val sendPage: String =
+val sendPage: String =
     """
         <html>
             <head>
@@ -407,282 +343,87 @@ const val sendPage: String =
             <body style='display: flex'>
                 <section class="nes-container" style='overflow: scroll; width: 50vw'>
                     <h1>Opprett notifikasjon</h1>
-                     
-                    <section class="nes-container with-title">
-                        <h2 class='title'>Mottakere: altinn-tjeneste</h2>
-                     
-                        <form method="post" action="/submit_altinn">
-                            <div class='nes-field'>
-                                <label for="altinn_vnr">Virksomhetsnummer:</label>
-                                <input class='nes-input' id="altinn_vnr" name="vnr" type="text" value="910825526" >
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_scode">Service code:</label>
-                                <input class='nes-input' id="altinn_scode" name="scode" type="text" value="4936">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_sedit">Service edition:</label>
-                                <input class='nes-input' id="altinn_sedit" name="sedit" type="text" value="1">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_tekst">Tekst:</label>
-                                <input class='nes-input' id="altinn_tekst" name="tekst" type="text" value="Dette er en test-melding">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_url">url:</label>
-                                <input class='nes-input' id="altinn_url" name="url" type="text" value="https://dev.nav.no">
-                            </div>
-                            
-                            <section class="nes-container with-title">
-                                <h3 class='title'>Notifikasjonstype</h3>
-                                <label for="altinn_beskjed">
-                                    <input type="radio" class='nes-radio' id="altinn_beskjed" name="type" value="beskjed" checked> 
-                                    <span>beskjed</span>
-                                </label>
-                                <label for="altinn_oppgave">
-                                    <input type="radio" class='nes-radio' id="altinn_oppgave" name="type" value="oppgave">
-                                    <span>oppgave</span>
-                                </label>
-                            </section>
-                            <button class='nes-btn is-primary'>send</button>
-                        </form>
-                    </section>
-                    <section class="nes-container with-title">
-                        <h2 class='title'>Mottakere: naermeste leder</h2>
-                         
-                        <form method="post" action="/submit_digisyfo">
-                            <div class='nes-field'>
-                                <label for="vnr">Virksomhetsnummer:</label>
-                                <input class='nes-input' id="vnr" name="vnr" type="text" value="910825526">
-                            </div>
-                            <div class='nes-field'>    
-                                <label for="fnrleder">Fnr leder:</label>
-                                <input class='nes-input' id="fnrleder" name="fnrleder" type="text" value="">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="fnrsyk">Fnr sykmeldt:</label>
-                                <input class='nes-input' id="fnrsyk" name="fnrsyk" type="text" value="">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="tekst">Tekst:</label>
-                                <input class='nes-input' id="tekst" name="tekst" type="text" value="Dette er en test-melding">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="url">url:</label>
-                                <input class='nes-input' id="url" name="url" type="text" value="https://dev.nav.no">
-                            </div>
-                            <section class="nes-container with-title">
-                                <h3 class='title'>Notifikasjonstype</h3>
-                                <label for="altinn_beskjed">
-                                    <input type="radio" class='nes-radio' id="beskjed" name="type" value="beskjed" checked> 
-                                    <span>beskjed</span>
-                                </label>
-                                <label for="altinn_oppgave">
-                                    <input type="radio" class='nes-radio' id="oppgave" name="type" value="oppgave">
-                                    <span>oppgave</span>
-                                </label>
-                            </section>
-                            <button class='nes-btn is-primary'>send</button>
-                        </form>
-                    </section>
-                    <section class="nes-container with-title">
-                        <h2 class='title'>Mottakere: altinn rolle</h2>
-                     
-                        <form method="post" action="/submit_altinn_rolle"> 
-                            <div class='nes-field'>
-                                <label for="vnr">Virksomhetsnummer:</label>
-                                <input class='nes-input' id="vnr" name="vnr" type="text" value="910825526">
-                            </div>
-                            <div class='nes-field'>    
-                                <label for="altinn_rcode">altinn rollekode:</label>
-                                <input class='nes-input' id="altinn_rcode" name="rcode" type="text" value="DAGL">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="tekst">Tekst:</label>
-                                <input class='nes-input' id="tekst" name="tekst" type="text" value="Dette er en test-melding">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="url">url:</label>
-                                <input class='nes-input' id="url" name="url" type="text" value="https://dev.nav.no">
-                            </div>
-                            
-                            <section class="nes-container with-title">
-                                <h3 class='title'>Notifikasjonstype</h3>
-                                <label for="altinn_beskjed">
-                                    <input type="radio" class='nes-radio' id="beskjed" name="type" value="beskjed" checked> 
-                                    <span>beskjed</span>
-                                </label>
-                                <label for="altinn_oppgave">
-                                    <input type="radio" class='nes-radio' id="oppgave" name="type" value="oppgave">
-                                    <span>oppgave</span>
-                                </label>
-                            </section>
-                            <button class='nes-btn is-primary'>send</button>
-                        </form>
-                    </section>
-                    <section class="nes-container with-title">
-                        <h2 class='title'>Mottakere: altinn reportee</h2>
-                         
-                        <form method="post" action="/submit_altinn_reportee">
-                            <div class='nes-field'>
-                                <label for="vnr">Virksomhetsnummer:</label>
-                                <input class='nes-input' id="vnr" name="vnr" type="text" value="910825526">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="fnr">altinn reportee:</label>
-                                <input class='nes-input' id="fnr" name="fnr" type="text" value="16120101181">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="tekst">Tekst:</label>
-                                <input class='nes-input' id="tekst" name="tekst" type="text" value="Dette er en test-melding">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="url">url:</label>
-                                <input class='nes-input' id="url" name="url" type="text" value="https://dev.nav.no">
-                            </div>
-                            
-                            <section class="nes-container with-title">
-                                <h3 class='title'>Notifikasjonstype</h3>
-                                <label for="altinn_beskjed">
-                                    <input type="radio" class='nes-radio' id="beskjed" name="type" value="beskjed" checked> 
-                                    <span>beskjed</span>
-                                </label>
-                                <label for="altinn_oppgave">
-                                    <input type="radio" class='nes-radio' id="oppgave" name="type" value="oppgave">
-                                    <span>oppgave</span>
-                                </label>
-                            </section>
-                            <button class='nes-btn is-primary'>send</button>
-                        </form>
-                    </section>
-                    <section class="nes-container with-title">
-                        <h2 class='title'>Hard Delete notifikasjon</h2>
-                         
-                        <form method="post" action="/hard_delete_notifikasjon">
-                            <div class='nes-field'>
-                                <label for="id">id:</label>
-                                <input class='nes-input' id="id" name="id" type="text" value="">
-                            </div>
-                            <button class='nes-btn is-error'>slett</button>
-                        </form>
-                    </section>
+                     ${ inputSection("Mottakere: altinn-tjeneste", "/submit_altinn") {
+                        """
+                        ${ inputs("altinn_vnr", "Virksomhetsnummer", "910825526") }
+                        ${ inputs("altinn_scode", "Service code", "4936") }
+                        ${ inputs("altinn_sedit", "Service edition", "1") }
+                        ${ inputs("altinn_tekst", "Tekst", "Dette er en test-melding") }
+                        ${ inputs("altinn_url", "url", "https://dev.nav.no") }
+                        ${ notifikasjonstypevalg() }
+                        """ }}
+                    ${ inputSection( "Mottakere: naermeste leder", "/submit_digisyfo") {
+                        """
+                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                        ${inputs("fnrleder", "Fnr leder")}
+                        ${inputs("fnrsyk", "Fnr sykmeldt")}
+                        ${inputs("tekst", "Tekst","Dette er en test-melding")}
+                        ${inputs("url", "url", "https://dev.nav.no")}
+                        ${notifikasjonstypevalg()}
+                        """ }}
+                    ${ inputSection("Mottakere: altinn rolle", "/submit_altinn_rolle"){
+                        """
+                            ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                            ${inputs("altinn_rcode", "altinn rollekode","DAGL")}
+                            ${inputs("tekst", "Tekst","Dette er en test-melding")}
+                            ${inputs("url", "url", "https://dev.nav.no")} 
+                            ${notifikasjonstypevalg()}
+                        """}}
+                    ${ inputSection("Mottakere: altinn reportee", "/submit_altinn_reportee"){
+                    """
+                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                        ${inputs("fnr", "altinn reportee","16120101181")}
+                        ${inputs("tekst", "Tekst","Dette er en test-melding")}
+                        ${inputs("url", "url", "https://dev.nav.no")}
+                        ${notifikasjonstypevalg()}
+                    """}}
+                    ${ inputSection("Hard Delete notifikasjon","/hard_delete_notifikasjon", "slett", "is-error" ){
+                        inputs("id", "id")
+                    }}
                 </section>
                 <section class="nes-container with-title" style='overflow: scroll; width: 50vw'>
                     <h1>Opprett sak</h1>
-                    <section class="nes-container with-title">
-                        <h2 class='title'>Mottakere: altinn tjeneste</h2>
-                         
-                        <form method="post" action="/opprett_sak_servicecode">
-                            <div class='nes-field'>
-                                <label for="altinn_vnr">Virksomhetsnummer:</label>
-                                <input class='nes-input' id="altinn_vnr" name="vnr" type="text" value="910825526">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_scode">Service code:</label>
-                                <input class='nes-input' id="altinn_scode" name="scode" type="text" value="4936">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_sedit">Service edition:</label>
-                                <input class='nes-input' id="altinn_sedit" name="sedit" type="text" value="1">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_tekst">Tittel:</label>
-                                <input class='nes-input' id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding"></textarea>
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_url">url:</label>
-                                <input class='nes-input' id="altinn_url" name="url" type="text" value="https://dev.nav.no">
-                            </div>
-                            
-                            <button class='nes-btn is-primary'>send</button>
-                        </form>
-                    </section>
-                    <section class="nes-container with-title">
-                        <h2 class='title'>Mottakere: altinn rolle</h2>
-                     
-                        <form method="post" action="/opprett_sak_rolle">
-                            <div class='nes-field'>
-                                <label for="altinn_vnr">Virksomhetsnummer:</label>
-                                <input class='nes-input' id="altinn_vnr" name="vnr" type="text" value="910825526">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_rcode">altinn rollekode:</label>
-                                <input class='nes-input' id="altinn_rcode" name="rcode" type="text" value="DAGL">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_tekst">Tittel:</label>
-                                <input class='nes-input' id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_url">url:</label>
-                                <input class='nes-input' id="altinn_url" name="url" type="text" value="https://dev.nav.no">
-                            </div>
-                            
-                            <button class='nes-btn is-primary'>send</button>
-                        </form>
-                    </section>
-                    <section class="nes-container with-title">
-                        <h2 class='title'>Mottakere: altinn reportee</h2>
-                     
-                        <form method="post" action="/opprett_sak_reportee">
-                            <div class='nes-field'>
-                                <label for="altinn_vnr">Virksomhetsnummer:</label>
-                                <input class='nes-input' id="altinn_vnr" name="vnr" type="text" value="910825526">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="fnr">altinn reportee:</label>
-                                <input class='nes-input' id="fnr" name="fnr" type="text" value="16120101181">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_tekst">Tittel:</label>
-                                <input class='nes-input' id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_url">url:</label>
-                                <input class='nes-input' id="altinn_url" name="url" type="text" value="https://dev.nav.no">
-                            </div>
-                            <button class='nes-btn is-primary'>send</button>
-                        </form>
-                    </section>
-                    <section class="nes-container with-title">
-                        <h2 class='title'>Mottakere: nærmeste leder</h2>
-                     
-                        <form method="post" action="/opprett_sak_digisyfo">
-                            <div class='nes-field'>
-                                <label for="altinn_vnr">Virksomhetsnummer:</label>
-                                <input class='nes-input' id="altinn_vnr" name="vnr" type="text" value="910825526">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="fnrleder">Fnr leder:</label>
-                                <input class='nes-input' id="fnrleder" name="fnrleder" type="text" value="">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="fnrsyk">Fnr sykmeldt:</label>
-                                <input class='nes-input' id="fnrsyk" name="fnrsyk" type="text" value="">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_tekst">Tittel:</label>
-                                <input class='nes-input' id="altinn_tekst" name="tittel" type="text" value="Dette er en test-melding">
-                            </div>
-                            <div class='nes-field'>
-                                <label for="altinn_url">url:</label>
-                                <input class='nes-input' id="altinn_url" name="url" type="text" value="https://dev.nav.no">
-                            </div>
-                            
-                            <button class='nes-btn is-primary'>send</button>
-                        </form>
-                    </section>
-                    <section class="nes-container with-title">
-                        <h2 class='title'>Hard Delete sak</h2>
-                         
-                        <form method="post" action="/hard_delete_sak">
-                            <div class='nes-field'>
-                                <label for="id">id:</label>
-                                <input class='nes-input' id="id" name="id" type="text" value="">
-                            </div>
-                            <button class='nes-btn is-error'>slett</button>
-                        </form>
-                    </section>
+                    ${inputSection("Mottakere: altinn tjeneste","/opprett_sak_servicecode"){
+                        """
+                        ${inputs( "altinn_vnr","Virksomhetsnummer", "910825526")}
+                        ${inputs("altinn_scode", "Service code", "4936")}
+                        ${inputs("altinn_sedit", "Service edition", "1")}
+                        ${inputs("tittel", "Tekst", "Dette er en test-melding")}
+                        ${inputs("url", "url", "https://dev.nav.no")}
+                        """
+                    }}
+                    ${ inputSection("Mottakere: altinn rolle", "/opprett_sak_rolle" ){
+                        """
+                            ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                            ${inputs("rcode", "altinn rollekode","DAGL")}
+                            ${inputs("tittel", "Tittel","Dette er en test-melding")}
+                            ${inputs("url", "url", "https://dev.nav.no")}
+                        """ }}
+                    ${ inputSection("Mottakere: altinn reportee", "/opprett_sak_reportee"){
+                        """
+                            ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                            ${inputs("fnr", "altinn reportee","16120101181")}
+                            ${inputs("tittel", "Tittel","Dette er en test-melding")}
+                            ${inputs("url", "url", "https://dev.nav.no")}
+                        """ }}
+                    ${inputSection("Mottakere: nærmeste leder", "/opprett_sak_digisyfo"){
+                        """
+                            ${inputs( "altinn_vnr","Virksomhetsnummer", "910825526")}
+                            ${inputs("fnrleder", "Fnr leder")}
+                            ${inputs("fnrsyk", "Fnr sykmeldt")}
+                            ${inputs("tittel", "Tekst", "Dette er en test-melding")}
+                            ${inputs("url", "url", "https://dev.nav.no")} 
+                        """ }}     
+                    ${inputSection("Oppdater sak", "/oppdater_sak"){
+                        """
+                            ${inputs("id", "id")}
+                            ${inputs("nyLenkeTilSak", "nyLenkeTilSak")}
+                            ${inputs("nyStatus", "nyStatus", "UNDER_BEHANDLING")}
+                            ${inputs("nyTekst", "nyTekst")}
+                        """}}
+                    ${ inputSection("Hard Delete sak","/hard_delete_sak", "slett", "is-error" ){
+                            inputs( "id", "id")
+                    }}
                 </section>
             </body>
         </html>
@@ -718,7 +459,7 @@ fun okPage(utfall: String): String =
 fun nyOppgave(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NyOppgave(${vars.joinToString(" ") { "$$it: String!" }}) {
+        mutation NyOppgave(${vars.graphQLParameters()}) {
             nyOppgave(
                 nyOppgave: {
                     metadata: {
@@ -748,6 +489,7 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
         }
     """
 
+// language=HTML
 const val errorPage: String =
     """
         <html>
@@ -776,7 +518,7 @@ const val errorPage: String =
 fun nyBeskjed(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NyBeskjed(${vars.joinToString(" ") { "${'$'}$it: String!" }}) {
+        mutation NyBeskjed(${vars.graphQLParameters()}) {
             nyBeskjed(
                 nyBeskjed: {
                     metadata: {
@@ -822,7 +564,7 @@ fun hardDeleteNotifikasjon(): String =
 fun nySak(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NySak(${vars.joinToString(" ") { "${'$'}$it: String!" }}) {
+        mutation NySak(${vars.graphQLParameters()}) {
             nySak(
                 grupperingsid: "${java.util.UUID.randomUUID()}"
                 merkelapp: "fager"
@@ -846,6 +588,31 @@ fun nySak(vars: List<String>, mottaker: String): String =
             }
         }
     """
+
+fun oppdaterSak(vars: List<String>): String =
+    // language=GraphQL
+    """
+        mutation OppdaterSak(${vars.graphQLParameters()}){
+            nyStatusSak(
+                id: ${'$'}id
+                ny_status: ${'$'}nyStatus
+                overstyrStatustekstMed: ${'$'}nyTekst
+                nyLenkeTilSak: ${'$'}nyLenkeTilSak
+            ){
+                __typename
+                ... on Error{
+                    feilmelding
+                }
+                ... on NyStatusSakVellykket{
+                  id
+                }
+            }
+        }
+    """
+
+private fun List<String>.graphQLParameters() =
+    joinToString(" ") { "${'$'}$it: String!" }
+
 
 fun hardDeleteSak(): String =
     // language=GraphQL
