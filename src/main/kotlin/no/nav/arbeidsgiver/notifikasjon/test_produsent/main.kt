@@ -193,7 +193,7 @@ fun main() {
                     id = form["id"].toString(),
                     nyLenkeTilSak = form["nyLenkeTilSak"].toString(),
                     nyStatus = form["nyStatus"].toString(),
-                    nyTekst = form["nyText"].toString()
+                    nyTekst = form["nyTekst"].toString()
                 )
             }
             handleForm("/hard_delete_notifikasjon") { form ->
