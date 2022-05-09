@@ -229,7 +229,7 @@ suspend fun oppdaterStatusTilSak(id: String, nyLenkeTilSak: String, nyTekst: Str
             ){
                 nyStatusSak(
                     id: ${'$'}id
-                    ny_status: ${'$'}nyStatus
+                    nyStatus: ${'$'}nyStatus
                     overstyrStatustekstMed: ${'$'}nyTekst
                     nyLenkeTilSak: ${'$'}nyLenkeTilSak
                 ){
@@ -602,7 +602,7 @@ fun nySak(vars: List<String>, mottaker: String): String =
                 ]
                 tittel: ${'$'}tittel
                 lenke: ${'$'}url
-                initiell_status: MOTTATT
+                initiellStatus: MOTTATT
                 hardDelete: ${'$'}hardDelete
             ) {
                 __typename
