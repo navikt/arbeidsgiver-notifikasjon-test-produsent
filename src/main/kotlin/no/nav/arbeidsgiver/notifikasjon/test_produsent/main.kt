@@ -132,6 +132,7 @@ fun main() {
                         "url" to form["url"].toString(),
                         "serviceCode" to form["scode"].toString(),
                         "serviceEdition" to form["sedit"].toString(),
+                        "hardDelete" to form["hardDelete"]?.let { if (it.isNotBlank()) mapOf("om" to it) else null },
                     ),
                     mottaker = """
                             altinn: {
@@ -212,7 +213,7 @@ fun main() {
     }.start(wait = true)
 }
 
-suspend fun opprettNySak(variables: Map<String, String>, mottaker: String): String {
+suspend fun opprettNySak(variables: Map<String, Any?>, mottaker: String): String {
     return executeGraphql(nySak(variables.keys.toList(), mottaker), variables)
 }
 
@@ -254,7 +255,7 @@ suspend fun sendNotifikasjon(type: String, mottaker: String, variables: Map<Stri
     }
 }
 
-suspend fun executeGraphql(query: String, variables: Map<String, String>): String {
+suspend fun executeGraphql(query: String, variables: Map<String, Any?>): String {
     log.info("Ville ha sendt: {}, {}", query, variables)
     val requestBody = objectMapper.writeValueAsString(
         mapOf(
@@ -414,6 +415,7 @@ val sendPage: String =
                         ${inputs("sedit", "Service edition", "1")}
                         ${inputs("tittel", "Tekst", "Dette er en test-melding")}
                         ${inputs("url", "url", "https://dev.nav.no")}
+                        ${inputs("hardDelete", "hardDelete", "")}
                         """
                     }}
                     ${ inputSection("Mottakere: altinn rolle", "/opprett_sak_rolle" ){
@@ -601,6 +603,7 @@ fun nySak(vars: List<String>, mottaker: String): String =
                 tittel: ${'$'}tittel
                 lenke: ${'$'}url
                 initiell_status: MOTTATT
+                hardDelete: ${'$'}hardDelete
             ) {
                 __typename
                 ... on NySakVellykket {
