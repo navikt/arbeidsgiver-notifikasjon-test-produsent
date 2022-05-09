@@ -590,7 +590,7 @@ fun hardDeleteNotifikasjon(): String =
 fun nySak(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NySak(${vars.graphQLParameters()}) {
+        mutation NySak(${vars.graphQLParameters(mapOf("hardDelete" to "FutureTemporalInput"))}) {
             nySak(
                 grupperingsid: "${java.util.UUID.randomUUID()}"
                 merkelapp: "fager"
@@ -616,8 +616,8 @@ fun nySak(vars: List<String>, mottaker: String): String =
         }
     """
 
-private fun List<String>.graphQLParameters() =
-    joinToString(" ") { "${'$'}$it: String!" }
+private fun List<String>.graphQLParameters(typeOverrides: Map<String, String> = mapOf()) =
+    joinToString(" ") { "${'$'}$it: ${typeOverrides.getOrDefault(it, "String!")}" }
 
 
 fun hardDeleteSak(): String =
