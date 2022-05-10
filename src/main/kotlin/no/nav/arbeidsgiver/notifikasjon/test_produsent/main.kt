@@ -65,6 +65,8 @@ fun main() {
                         "url" to form["url"].toString(),
                         "serviceCode" to form["scode"].toString(),
                         "serviceEdition" to form["sedit"].toString(),
+                        "sms" to form["sms"]?.let { it.ifBlank { null } },
+                        "epost" to form["epost"]?.let { it.ifBlank { null } },
                     ),
                     mottaker = """
                         altinn: {
@@ -247,7 +249,7 @@ suspend fun oppdaterStatusTilSak(id: String, nyLenkeTilSak: String, nyTekst: Str
 
 }
 
-suspend fun sendNotifikasjon(type: String, mottaker: String, variables: Map<String, String>): String {
+suspend fun sendNotifikasjon(type: String, mottaker: String, variables: Map<String, Any?>): String {
     return when (type) {
         "beskjed" -> executeGraphql(nyBeskjed(variables.keys.toList(), mottaker), variables)
         "oppgave" -> executeGraphql(nyOppgave(variables.keys.toList(), mottaker), variables)
@@ -370,11 +372,13 @@ val sendPage: String =
                     <h1>Opprett notifikasjon</h1>
                      ${ inputSection("Mottakere: altinn-tjeneste", "/submit_altinn") {
                         """
-                        ${ inputs("altinn_vnr", "Virksomhetsnummer", "910825526") }
-                        ${ inputs("altinn_scode", "Service code", "4936") }
-                        ${ inputs("altinn_sedit", "Service edition", "1") }
-                        ${ inputs("altinn_tekst", "Tekst", "Dette er en test-melding") }
-                        ${ inputs("altinn_url", "url", "https://dev.nav.no") }
+                        ${ inputs("vnr", "Virksomhetsnummer", "910825526") }
+                        ${ inputs("scode", "Service code", "4936") }
+                        ${ inputs("sedit", "Service edition", "1") }
+                        ${ inputs("tekst", "Tekst", "Dette er en test-melding") }
+                        ${ inputs("url", "url", "https://dev.nav.no") }
+                        ${ inputs("epost", "varsle epost", "") }
+                        ${ inputs("sms", "varsle sms", "") }
                         ${ notifikasjonstypevalg() }
                         """ }}
                     ${ inputSection( "Mottakere: naermeste leder", "/submit_digisyfo") {
@@ -501,7 +505,8 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
                         merkelapp: "fager"
                         tekst: ${'$'}tekst
                         lenke: ${'$'}url
-                    } 
+                    }
+                    ${vars.eksterneVarsler()}
                 }
             ) {
                 __typename
@@ -561,6 +566,7 @@ fun nyBeskjed(vars: List<String>, mottaker: String): String =
                         tekst: ${'$'}tekst
                         lenke: ${'$'}url
                     } 
+                    ${vars.eksterneVarsler()}
                 }
             ) {
                 __typename
@@ -633,3 +639,47 @@ fun hardDeleteSak(): String =
      }
     """.trimIndent()
 
+
+private fun List<String>.eksterneVarsler(): String {
+    val harSms = contains("sms")
+    val harEpost = contains("epost")
+    if (!harSms && !harEpost) {
+        return ""
+    }
+
+    val smsPart = """
+        {
+            sms: {
+                mottaker: {
+                  kontaktinfo: {
+                    tlf: ${'$'}sms
+                  }
+                }
+                smsTekst: "Test sms fra test-produsent"
+                sendetidspunkt: {
+                  sendevindu: LOEPENDE
+                }
+            }
+        }
+    """
+    val epostPart = """
+        {
+          epost: {
+            mottaker: {
+              kontaktinfo: {
+                epostadresse: ${'$'}epost
+              }
+            }
+            epostTittel: "Test epost fra test-produsent"
+            epostHtmlBody: "Dette er en test"
+            sendetidspunkt: {
+              sendevindu: LOEPENDE
+            }
+          }
+        }
+    """
+    return """eksterneVarsler: [
+        ${if(harSms) smsPart else ""}
+        ${if(harEpost) epostPart else ""}
+    ]"""
+}
