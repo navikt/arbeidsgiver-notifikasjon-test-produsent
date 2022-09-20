@@ -144,7 +144,7 @@ fun main() {
             handleForm("/oppgave_utgaatt") { form ->
                 executeGraphql(
                     """
-                    mutation OppgaveUtgaatt(${'$'}id: ID) {
+                    mutation OppgaveUtgaatt(${'$'}id: ID!) {
                       oppgaveUtgaatt(id: ${'$'}id) {
                         __typename
                         ... on Error {
