@@ -16,7 +16,7 @@ import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import org.slf4j.LoggerFactory
-import java.util.UUID
+import java.util.*
 
 val objectMapper = jacksonObjectMapper()
 
@@ -66,7 +66,7 @@ fun main() {
                         "serviceEdition" to form["sedit"].toString(),
                         "sms" to form["sms"]?.let { it.ifBlank { null } },
                         "epost" to form["epost"]?.let { it.ifBlank { null } },
-                    ),
+                    ).filterValues { it != null },
                     mottaker = """
                         altinn: {
                             serviceCode: ${'$'}serviceCode
