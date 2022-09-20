@@ -55,8 +55,7 @@ fun main() {
                 call.respondHtml(sendPage)
             }
 
-            handleForm("/submit_altinn") { form ->
-
+            handleForm("/opprett_notifikasjon_altinn") { form ->
                 sendNotifikasjon(
                     type = form["type"].toString(),
                     variables = mapOf(
@@ -76,8 +75,7 @@ fun main() {
                     """,
                 )
             }
-
-            handleForm("/submit_digisyfo") { form ->
+            handleForm("/opprett_notifikasjon_digisyfo") { form ->
                 sendNotifikasjon(
                     type = form["type"].toString(), mottaker = """
                             naermesteLeder: {
@@ -93,7 +91,7 @@ fun main() {
                     )
                 )
             }
-            handleForm("/submit_altinn_rolle") { form ->
+            handleForm("/opprett_notifikasjon_altinn_rolle") { form ->
                 sendNotifikasjon(
                     type = form["type"].toString(),
                     variables = mapOf(
@@ -109,7 +107,7 @@ fun main() {
                         """,
                 )
             }
-            handleForm("/submit_altinn_reportee") { form ->
+            handleForm("/opprett_notifikasjon_altinn_reportee") { form ->
                 sendNotifikasjon(
                     type = form["type"].toString(),
                     variables = mapOf(
@@ -125,6 +123,43 @@ fun main() {
                         """,
                 )
             }
+            handleForm("/oppgave_utfoert") { form ->
+                executeGraphql(
+                    """
+                    mutation OppgaveUtfoert(${'$'}id: ID!) {
+                      oppgaveUtfoert(id: ${'$'}id) {
+                        __typename
+                        ... on Error {
+                          feilmelding
+                        }
+                        ... on OppgaveUtfoertVellykket {
+                          id
+                        }
+                      }
+                    }
+                    """.trimIndent(),
+                    mapOf("id" to form["id"].toString())
+                )
+            }
+            handleForm("/oppgave_utgaatt") { form ->
+                executeGraphql(
+                    """
+                    mutation OppgaveUtgaatt(${'$'}id: ID) {
+                      oppgaveUtgaatt(id: ${'$'}id) {
+                        __typename
+                        ... on Error {
+                          feilmelding
+                        }
+                        ... on OppgaveUtgaattVellykket {
+                          id
+                        }
+                      }
+                    }
+                    """.trimIndent(),
+                    mapOf("id" to form["id"].toString())
+                )
+            }
+
 
             handleForm("/opprett_sak_servicecode") { form ->
                 opprettNySak(
@@ -370,7 +405,7 @@ val sendPage: String =
             <body style='display: flex'>
                 <section class="nes-container" style='overflow: scroll; width: 50vw'>
                     <h1>Opprett notifikasjon</h1>
-                     ${ inputSection("Mottakere: altinn-tjeneste", "/submit_altinn") {
+                     ${ inputSection("Mottakere: altinn-tjeneste", "/opprett_notifikasjon_altinn") {
                         """
                         ${ inputs("vnr", "Virksomhetsnummer", "910825526") }
                         ${ inputs("scode", "Service code", "4936") }
@@ -381,7 +416,7 @@ val sendPage: String =
                         ${ inputs("sms", "varsle sms", "") }
                         ${ notifikasjonstypevalg() }
                         """ }}
-                    ${ inputSection( "Mottakere: naermeste leder", "/submit_digisyfo") {
+                    ${ inputSection( "Mottakere: naermeste leder", "/opprett_notifikasjon_digisyfo") {
                         """
                         ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                         ${inputs("fnrleder", "Fnr leder")}
@@ -390,7 +425,7 @@ val sendPage: String =
                         ${inputs("url", "url", "https://dev.nav.no")}
                         ${notifikasjonstypevalg()}
                         """ }}
-                    ${ inputSection("Mottakere: altinn rolle", "/submit_altinn_rolle"){
+                    ${ inputSection("Mottakere: altinn rolle", "/opprett_notifikasjon_altinn_rolle"){
                         """
                             ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                             ${inputs("altinn_rcode", "altinn rollekode","DAGL")}
@@ -398,7 +433,7 @@ val sendPage: String =
                             ${inputs("url", "url", "https://dev.nav.no")} 
                             ${notifikasjonstypevalg()}
                         """}}
-                    ${ inputSection("Mottakere: altinn reportee", "/submit_altinn_reportee"){
+                    ${ inputSection("Mottakere: altinn reportee", "/opprett_notifikasjon_altinn_reportee"){
                     """
                         ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                         ${inputs("fnr", "altinn reportee","16120101181")}
@@ -407,6 +442,12 @@ val sendPage: String =
                         ${notifikasjonstypevalg()}
                     """}}
                     ${ inputSection("Hard Delete notifikasjon","/hard_delete_notifikasjon", "slett", "is-error" ){
+                        inputs("id", "id")
+                    }}
+                    ${ inputSection("Oppgave utført","/oppgave_utfoert", "sett utført", ){
+                        inputs("id", "id")
+                    }}
+                    ${ inputSection("Oppgave utgått","/oppgave_utgaatt", "sett utgått", ){
                         inputs("id", "id")
                     }}
                 </section>
