@@ -10,7 +10,7 @@
 
     <properties>
         <kotlin.version>1.6.10</kotlin.version>
-        <ktor.version>1.6.8</ktor.version>
+        <ktor.version>2.0.0</ktor.version>
         <jvm.version>15</jvm.version>
         <maven.compiler.source>${jvm.version}</maven.compiler.source>
         <maven.compiler.target>${jvm.version}</maven.compiler.target>
@@ -53,7 +53,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.13.3</version>
+            <version>2.13.4</version>
         </dependency>
 
         <!-- ktor client -->
