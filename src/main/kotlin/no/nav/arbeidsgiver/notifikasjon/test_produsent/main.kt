@@ -2,7 +2,7 @@ package no.nav.arbeidsgiver.notifikasjon.test_produsent
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.ktor.application.*
+import io.ktor.server.application.*
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
 import io.ktor.client.request.*
@@ -10,9 +10,9 @@ import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import org.slf4j.LoggerFactory
@@ -30,8 +30,9 @@ suspend fun ApplicationCall.respondHtml(html: String) {
         text = html,
     )
 }
+
 fun Route.handleForm(path: String, body: suspend (Parameters) -> String) {
-    post(path){
+    post(path) {
         try {
             val formParameters = call.receiveParameters()
             val result = body(formParameters)
@@ -227,7 +228,7 @@ fun main() {
                         """,
                 )
             }
-            handleForm("/oppdater_sak"){ form->
+            handleForm("/oppdater_sak") { form ->
                 oppdaterStatusTilSak(
                     id = form["id"].toString(),
                     nyLenkeTilSak = form["nyLenkeTilSak"].toString(),
@@ -255,7 +256,7 @@ suspend fun opprettNySak(variables: Map<String, Any?>, mottaker: String): String
     return executeGraphql(nySak(variables.keys.toList(), mottaker), variables)
 }
 
-suspend fun oppdaterStatusTilSak(id: String, nyLenkeTilSak: String, nyTekst: String, nyStatus: String): String{
+suspend fun oppdaterStatusTilSak(id: String, nyLenkeTilSak: String, nyTekst: String, nyStatus: String): String {
 
     return executeGraphql(
         """
@@ -306,16 +307,17 @@ suspend fun executeGraphql(query: String, variables: Map<String, Any?>): String 
         header(HttpHeaders.Authorization, "Bearer $accessToken")
         header(HttpHeaders.ContentType, "application/json")
         header(HttpHeaders.Accept, "application/json")
-        body = requestBody
+        setBody(requestBody)
     }
 
     return objectMapper.writeValueAsString(
         mapOf(
             "status" to response.status,
-            "body" to response.readText(),
+            "body" to response.bodyAsText(),
         )
     )
 }
+
 // language=HTML
 fun inputs(name: String, inpLabel: String, inpValue: String = ""): String {
     val id: String = UUID.randomUUID().toString()
@@ -329,7 +331,7 @@ fun inputs(name: String, inpLabel: String, inpValue: String = ""): String {
 
 
 // language=HTML
-fun notifikasjonstypevalg( ):String{
+fun notifikasjonstypevalg(): String {
     val beskjedId = UUID.randomUUID().toString()
     val oppgaveId = UUID.randomUUID().toString()
     return """
@@ -351,10 +353,10 @@ fun notifikasjonstypevalg( ):String{
 fun inputSection(
     tittel: String,
     action: String,
-    knapp:String = "send",
+    knapp: String = "send",
     buttonType: String = "is-primary",
     body: () -> String
-):String{
+): String {
     return """
     <section class="nes-container with-title">
         <h2 class='title'>${tittel}</h2>
@@ -372,7 +374,7 @@ suspend fun getAccessToken(): String {
     val clientId = System.getenv("AZURE_APP_CLIENT_ID")!!
     val clientSecret = System.getenv("AZURE_APP_CLIENT_SECRET")!!
 
-    val accessTokenResponse = httpClient.submitForm<String>(
+    val accessTokenResponse = httpClient.submitForm(
         url = tokenEndpoint,
         formParameters = Parameters.build {
             set("tenant", tenantId)
@@ -381,10 +383,8 @@ suspend fun getAccessToken(): String {
             set("client_secret", clientSecret)
             set("grant_type", "client_credentials")
         }
-    ) {
-        method = HttpMethod.Post
-    }
-    val map: Map<String, Any> = objectMapper.readValue(accessTokenResponse)
+    )
+    val map: Map<String, Any> = objectMapper.readValue(accessTokenResponse.bodyAsText())
     return map["access_token"] as String
 }
 
@@ -406,97 +406,131 @@ val sendPage: String =
             <body style='display: flex'>
                 <section class="nes-container" style='overflow: scroll; width: 50vw'>
                     <h1>Opprett notifikasjon</h1>
-                     ${ inputSection("Mottakere: altinn-tjeneste", "/opprett_notifikasjon_altinn") {
+                     ${
+        inputSection("Mottakere: altinn-tjeneste", "/opprett_notifikasjon_altinn") {
+            """
+                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                        ${inputs("scode", "Service code", "4936")}
+                        ${inputs("sedit", "Service edition", "1")}
+                        ${inputs("tekst", "Tekst", "Dette er en test-melding")}
+                        ${inputs("url", "url", "https://dev.nav.no")}
+                        ${inputs("frist", "frist", "")}
+                        ${inputs("epost", "varsle epost", "")}
+                        ${inputs("sms", "varsle sms", "")}
+                        ${notifikasjonstypevalg()}
                         """
-                        ${ inputs("vnr", "Virksomhetsnummer", "910825526") }
-                        ${ inputs("scode", "Service code", "4936") }
-                        ${ inputs("sedit", "Service edition", "1") }
-                        ${ inputs("tekst", "Tekst", "Dette er en test-melding") }
-                        ${ inputs("url", "url", "https://dev.nav.no") }
-                        ${ inputs("frist", "frist", "") }
-                        ${ inputs("epost", "varsle epost", "") }
-                        ${ inputs("sms", "varsle sms", "") }
-                        ${ notifikasjonstypevalg() }
-                        """ }}
-                    ${ inputSection( "Mottakere: naermeste leder", "/opprett_notifikasjon_digisyfo") {
-                        """
+        }
+    }
+                    ${
+        inputSection("Mottakere: naermeste leder", "/opprett_notifikasjon_digisyfo") {
+            """
                         ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                         ${inputs("fnrleder", "Fnr leder")}
                         ${inputs("fnrsyk", "Fnr sykmeldt")}
-                        ${inputs("tekst", "Tekst","Dette er en test-melding")}
+                        ${inputs("tekst", "Tekst", "Dette er en test-melding")}
                         ${inputs("url", "url", "https://dev.nav.no")}
                         ${notifikasjonstypevalg()}
-                        """ }}
-                    ${ inputSection("Mottakere: altinn rolle", "/opprett_notifikasjon_altinn_rolle"){
                         """
+        }
+    }
+                    ${
+        inputSection("Mottakere: altinn rolle", "/opprett_notifikasjon_altinn_rolle") {
+            """
                             ${inputs("vnr", "Virksomhetsnummer", "910825526")}
-                            ${inputs("altinn_rcode", "altinn rollekode","DAGL")}
-                            ${inputs("tekst", "Tekst","Dette er en test-melding")}
+                            ${inputs("altinn_rcode", "altinn rollekode", "DAGL")}
+                            ${inputs("tekst", "Tekst", "Dette er en test-melding")}
                             ${inputs("url", "url", "https://dev.nav.no")} 
                             ${notifikasjonstypevalg()}
-                        """}}
-                    ${ inputSection("Mottakere: altinn reportee", "/opprett_notifikasjon_altinn_reportee"){
-                    """
+                        """
+        }
+    }
+                    ${
+        inputSection("Mottakere: altinn reportee", "/opprett_notifikasjon_altinn_reportee") {
+            """
                         ${inputs("vnr", "Virksomhetsnummer", "910825526")}
-                        ${inputs("fnr", "altinn reportee","16120101181")}
-                        ${inputs("tekst", "Tekst","Dette er en test-melding")}
+                        ${inputs("fnr", "altinn reportee", "16120101181")}
+                        ${inputs("tekst", "Tekst", "Dette er en test-melding")}
                         ${inputs("url", "url", "https://dev.nav.no")}
                         ${notifikasjonstypevalg()}
-                    """}}
-                    ${ inputSection("Hard Delete notifikasjon","/hard_delete_notifikasjon", "slett", "is-error" ){
-                        inputs("id", "id")
-                    }}
-                    ${ inputSection("Oppgave utført","/oppgave_utfoert", "sett utført", ){
-                        inputs("id", "id")
-                    }}
-                    ${ inputSection("Oppgave utgått","/oppgave_utgaatt", "sett utgått", ){
-                        inputs("id", "id")
-                    }}
+                    """
+        }
+    }
+                    ${
+        inputSection("Hard Delete notifikasjon", "/hard_delete_notifikasjon", "slett", "is-error") {
+            inputs("id", "id")
+        }
+    }
+                    ${
+        inputSection("Oppgave utført", "/oppgave_utfoert", "sett utført") {
+            inputs("id", "id")
+        }
+    }
+                    ${
+        inputSection("Oppgave utgått", "/oppgave_utgaatt", "sett utgått") {
+            inputs("id", "id")
+        }
+    }
                 </section>
                 <section class="nes-container with-title" style='overflow: scroll; width: 50vw'>
                     <h1>Opprett sak</h1>
-                    ${inputSection("Mottakere: altinn tjeneste","/opprett_sak_servicecode"){
-                        """
-                        ${inputs( "vnr","Virksomhetsnummer", "910825526")}
+                    ${
+        inputSection("Mottakere: altinn tjeneste", "/opprett_sak_servicecode") {
+            """
+                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                         ${inputs("scode", "Service code", "4936")}
                         ${inputs("sedit", "Service edition", "1")}
                         ${inputs("tittel", "Tekst", "Dette er en test-melding")}
                         ${inputs("url", "url", "https://dev.nav.no")}
                         ${inputs("hardDelete", "hardDelete", "")}
                         """
-                    }}
-                    ${ inputSection("Mottakere: altinn rolle", "/opprett_sak_rolle" ){
-                        """
+        }
+    }
+                    ${
+        inputSection("Mottakere: altinn rolle", "/opprett_sak_rolle") {
+            """
                             ${inputs("vnr", "Virksomhetsnummer", "910825526")}
-                            ${inputs("rcode", "altinn rollekode","DAGL")}
-                            ${inputs("tittel", "Tittel","Dette er en test-melding")}
+                            ${inputs("rcode", "altinn rollekode", "DAGL")}
+                            ${inputs("tittel", "Tittel", "Dette er en test-melding")}
                             ${inputs("url", "url", "https://dev.nav.no")}
-                        """ }}
-                    ${ inputSection("Mottakere: altinn reportee", "/opprett_sak_reportee"){
                         """
+        }
+    }
+                    ${
+        inputSection("Mottakere: altinn reportee", "/opprett_sak_reportee") {
+            """
                             ${inputs("vnr", "Virksomhetsnummer", "910825526")}
-                            ${inputs("fnr", "altinn reportee","16120101181")}
-                            ${inputs("tittel", "Tittel","Dette er en test-melding")}
+                            ${inputs("fnr", "altinn reportee", "16120101181")}
+                            ${inputs("tittel", "Tittel", "Dette er en test-melding")}
                             ${inputs("url", "url", "https://dev.nav.no")}
-                        """ }}
-                    ${inputSection("Mottakere: nærmeste leder", "/opprett_sak_digisyfo"){
                         """
-                            ${inputs( "altinn_vnr","Virksomhetsnummer", "910825526")}
+        }
+    }
+                    ${
+        inputSection("Mottakere: nærmeste leder", "/opprett_sak_digisyfo") {
+            """
+                            ${inputs("altinn_vnr", "Virksomhetsnummer", "910825526")}
                             ${inputs("fnrleder", "Fnr leder")}
                             ${inputs("fnrsyk", "Fnr sykmeldt")}
                             ${inputs("tittel", "Tekst", "Dette er en test-melding")}
                             ${inputs("url", "url", "https://dev.nav.no")} 
-                        """ }}     
-                    ${inputSection("Oppdater sak", "/oppdater_sak"){
                         """
+        }
+    }     
+                    ${
+        inputSection("Oppdater sak", "/oppdater_sak") {
+            """
                             ${inputs("id", "id")}
                             ${inputs("nyLenkeTilSak", "nyLenkeTilSak")}
                             ${inputs("nyStatus", "nyStatus", "UNDER_BEHANDLING")}
                             ${inputs("nyTekst", "nyTekst")}
-                        """}}
-                    ${ inputSection("Hard Delete sak","/hard_delete_sak", "slett", "is-error" ){
-                            inputs( "id", "id")
-                    }}
+                        """
+        }
+    }
+                    ${
+        inputSection("Hard Delete sak", "/hard_delete_sak", "slett", "is-error") {
+            inputs("id", "id")
+        }
+    }
                 </section>
             </body>
         </html>
@@ -549,7 +583,7 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
                         tekst: ${'$'}tekst
                         lenke: ${'$'}url
                     }
-                    ${ if ("frist" in vars) "frist: ${'$'}frist" else "" }
+                    ${if ("frist" in vars) "frist: ${'$'}frist" else ""}
                     ${vars.eksterneVarsler()}
                 }
             ) {
@@ -723,7 +757,7 @@ private fun List<String>.eksterneVarsler(): String {
         }
     """
     return """eksterneVarsler: [
-        ${if(harSms) smsPart else ""}
-        ${if(harEpost) epostPart else ""}
+        ${if (harSms) smsPart else ""}
+        ${if (harEpost) epostPart else ""}
     ]"""
 }

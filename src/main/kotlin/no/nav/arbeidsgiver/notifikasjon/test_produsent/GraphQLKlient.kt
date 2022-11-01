@@ -8,7 +8,6 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import org.slf4j.LoggerFactory
-import java.util.*
 
 
 class GraphQLKlient(
@@ -29,8 +28,9 @@ class GraphQLKlient(
     }
 
     suspend fun opprettBeskjed() {
-        execute(mapOf(
-            "query" to """
+        execute(
+            mapOf(
+                "query" to """
                         mutation OpprettNyBeskjed(
                           ${'$'}eksternId: String!
                           ${'$'}virksomhetsnummer: String!
@@ -62,14 +62,15 @@ class GraphQLKlient(
                             }
                           }
                         }""".trimIndent(),
-            "variables" to """
+                "variables" to """
                 {
                   "eksternId": "1234-oppdatering",
                   "virksomhetsnummer": "012345678",
                   "lenke": "https://dev.nav.no/sakssystem/?sak=1234"
                 }
             """.trimIndent()
-        ))
+            )
+        )
     }
 
     private suspend fun execute(payload: Map<String, String>): HttpResponse {
@@ -79,9 +80,9 @@ class GraphQLKlient(
                 append(HttpHeaders.ContentType, "application/json")
                 append(HttpHeaders.Accept, "application/json")
             }
-            body = objectMapper.writeValueAsString(payload)
+            setBody(objectMapper.writeValueAsString(payload))
         }
-        log.info("${response.status}: ${response.receive<String>()}")
+        log.info("${response.status}: ${response.body<String>()}")
         return response
     }
 }
