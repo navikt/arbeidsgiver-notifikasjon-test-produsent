@@ -64,8 +64,9 @@ fun main() {
                         "url" to form["url"].toString(),
                         "serviceCode" to form["scode"].toString(),
                         "serviceEdition" to form["sedit"].toString(),
-                        "sms" to form["sms"]?.let { it.ifBlank { null } },
-                        "epost" to form["epost"]?.let { it.ifBlank { null } },
+                        "sms" to form["sms"]!!.ifBlank { null },
+                        "epost" to form["epost"]!!.ifBlank { null },
+                        "frist" to form["frist"]!!.ifBlank { null },
                     ).filterValues { it != null },
                     mottaker = """
                         altinn: {
@@ -412,6 +413,7 @@ val sendPage: String =
                         ${ inputs("sedit", "Service edition", "1") }
                         ${ inputs("tekst", "Tekst", "Dette er en test-melding") }
                         ${ inputs("url", "url", "https://dev.nav.no") }
+                        ${ inputs("frist", "frist", "") }
                         ${ inputs("epost", "varsle epost", "") }
                         ${ inputs("sms", "varsle sms", "") }
                         ${ notifikasjonstypevalg() }
@@ -530,7 +532,7 @@ fun okPage(utfall: String): String =
 fun nyOppgave(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NyOppgave(${vars.graphQLParameters()}) {
+        mutation NyOppgave(${vars.graphQLParameters(mapOf("frist" to "ISO8601Date"))}) {
             nyOppgave(
                 nyOppgave: {
                     metadata: {
@@ -547,6 +549,7 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
                         tekst: ${'$'}tekst
                         lenke: ${'$'}url
                     }
+                    ${ if ("frist" in vars) "frist: ${'$'}frist" else "" }
                     ${vars.eksterneVarsler()}
                 }
             ) {
