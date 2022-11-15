@@ -595,7 +595,6 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
                     metadata: {
                         eksternId: "${UUID.randomUUID()}"
                         virksomhetsnummer: ${'$'}vnr
-                        ${if ("frist" in vars) "frist: ${'$'}frist" else ""}
                         ${if ("grupperingsid" in vars) "grupperingsid: ${'$'}grupperingsid" else ""}
                     }
                     mottakere: [
