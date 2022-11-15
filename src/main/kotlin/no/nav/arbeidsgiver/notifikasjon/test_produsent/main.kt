@@ -68,6 +68,7 @@ fun main() {
                         "sms" to form["sms"]!!.ifBlank { null },
                         "epost" to form["epost"]!!.ifBlank { null },
                         "frist" to form["frist"]!!.ifBlank { null },
+                        "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
                     ).filterValues { it != null },
                     mottaker = """
                         altinn: {
@@ -84,13 +85,16 @@ fun main() {
                                 naermesteLederFnr: ${'$'}fnrLeder
                                 ansattFnr: ${'$'}fnrSykmeldt
                             }
-                        """, variables = mapOf(
+                        """,
+                    variables = mapOf(
                         "vnr" to form["vnr"].toString(),
                         "tekst" to form["tekst"].toString(),
                         "url" to form["url"].toString(),
                         "fnrLeder" to form["fnrleder"].toString(),
-                        "fnrSykmeldt" to form["fnrsyk"].toString()
-                    )
+                        "fnrSykmeldt" to form["fnrsyk"].toString(),
+                        "frist" to form["frist"]!!.ifBlank { null },
+                        "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
+                    ).filterValues { it != null },
                 )
             }
             handleForm("/opprett_notifikasjon_altinn_rolle") { form ->
@@ -101,7 +105,9 @@ fun main() {
                         "tekst" to form["tekst"].toString(),
                         "url" to form["url"].toString(),
                         "roleDefinitionCode" to form["rcode"].toString(),
-                    ),
+                        "frist" to form["frist"]!!.ifBlank { null },
+                        "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
+                    ).filterValues { it != null },
                     mottaker = """
                             altinnRolle: {
                                 roleDefinitionCode: ${'$'}roleDefinitionCode
@@ -117,7 +123,9 @@ fun main() {
                         "fnr" to form["fnr"].toString(),
                         "tekst" to form["tekst"].toString(),
                         "url" to form["url"].toString(),
-                    ),
+                        "frist" to form["frist"]!!.ifBlank { null },
+                        "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
+                    ).filterValues { it != null },
                     mottaker = """
                             altinnReportee: {
                                 fnr: ${'$'}fnr
@@ -166,6 +174,7 @@ fun main() {
             handleForm("/opprett_sak_servicecode") { form ->
                 opprettNySak(
                     variables = mapOf(
+                        "grupperingsid" to form["grupperingsid"].toString(),
                         "vnr" to form["vnr"].toString(),
                         "tittel" to form["tittel"].toString(),
                         "url" to form["url"].toString(),
@@ -184,6 +193,7 @@ fun main() {
             handleForm("/opprett_sak_rolle") { form ->
                 opprettNySak(
                     variables = mapOf(
+                        "grupperingsid" to form["grupperingsid"].toString(),
                         "vnr" to form["vnr"].toString(),
                         "tittel" to form["tittel"].toString(),
                         "url" to form["url"].toString(),
@@ -199,6 +209,7 @@ fun main() {
             handleForm("/opprett_sak_reportee") { form ->
                 opprettNySak(
                     variables = mapOf(
+                        "grupperingsid" to form["grupperingsid"].toString(),
                         "vnr" to form["vnr"].toString(),
                         "fnr" to form["fnr"].toString(),
                         "tittel" to form["tittel"].toString(),
@@ -214,6 +225,7 @@ fun main() {
             handleForm("/opprett_sak_digisyfo") { form ->
                 opprettNySak(
                     variables = mapOf(
+                        "grupperingsid" to form["grupperingsid"].toString(),
                         "vnr" to form["vnr"].toString(),
                         "tittel" to form["tittel"].toString(),
                         "url" to form["url"].toString(),
@@ -415,6 +427,7 @@ val sendPage: String =
                         ${inputs("tekst", "Tekst", "Dette er en test-melding")}
                         ${inputs("url", "url", "https://dev.nav.no")}
                         ${inputs("frist", "frist", "")}
+                        ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                         ${inputs("epost", "varsle epost", "")}
                         ${inputs("sms", "varsle sms", "")}
                         ${notifikasjonstypevalg()}
@@ -429,6 +442,8 @@ val sendPage: String =
                         ${inputs("fnrsyk", "Fnr sykmeldt")}
                         ${inputs("tekst", "Tekst", "Dette er en test-melding")}
                         ${inputs("url", "url", "https://dev.nav.no")}
+                        ${inputs("frist", "frist", "")}
+                        ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                         ${notifikasjonstypevalg()}
                         """
         }
@@ -440,6 +455,8 @@ val sendPage: String =
                             ${inputs("altinn_rcode", "altinn rollekode", "DAGL")}
                             ${inputs("tekst", "Tekst", "Dette er en test-melding")}
                             ${inputs("url", "url", "https://dev.nav.no")} 
+                            ${inputs("frist", "frist", "")}
+                            ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                             ${notifikasjonstypevalg()}
                         """
         }
@@ -451,6 +468,8 @@ val sendPage: String =
                         ${inputs("fnr", "altinn reportee", "16120101181")}
                         ${inputs("tekst", "Tekst", "Dette er en test-melding")}
                         ${inputs("url", "url", "https://dev.nav.no")}
+                        ${inputs("frist", "frist", "")}
+                        ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                         ${notifikasjonstypevalg()}
                     """
         }
@@ -476,6 +495,7 @@ val sendPage: String =
                     ${
         inputSection("Mottakere: altinn tjeneste", "/opprett_sak_servicecode") {
             """
+                        ${inputs("grupperingsid", "Grupperingsid", "${UUID.randomUUID()}")}
                         ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                         ${inputs("scode", "Service code", "4936")}
                         ${inputs("sedit", "Service edition", "1")}
@@ -488,6 +508,7 @@ val sendPage: String =
                     ${
         inputSection("Mottakere: altinn rolle", "/opprett_sak_rolle") {
             """
+                            ${inputs("grupperingsid", "Grupperingsid", "${UUID.randomUUID()}")}
                             ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                             ${inputs("rcode", "altinn rollekode", "DAGL")}
                             ${inputs("tittel", "Tittel", "Dette er en test-melding")}
@@ -498,6 +519,7 @@ val sendPage: String =
                     ${
         inputSection("Mottakere: altinn reportee", "/opprett_sak_reportee") {
             """
+                            ${inputs("grupperingsid", "Grupperingsid", "${UUID.randomUUID()}")}
                             ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                             ${inputs("fnr", "altinn reportee", "16120101181")}
                             ${inputs("tittel", "Tittel", "Dette er en test-melding")}
@@ -508,7 +530,8 @@ val sendPage: String =
                     ${
         inputSection("Mottakere: nærmeste leder", "/opprett_sak_digisyfo") {
             """
-                            ${inputs("altinn_vnr", "Virksomhetsnummer", "910825526")}
+                            ${inputs("grupperingsid", "Grupperingsid", "${UUID.randomUUID()}")}
+                            ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                             ${inputs("fnrleder", "Fnr leder")}
                             ${inputs("fnrsyk", "Fnr sykmeldt")}
                             ${inputs("tittel", "Tekst", "Dette er en test-melding")}
@@ -570,8 +593,10 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
             nyOppgave(
                 nyOppgave: {
                     metadata: {
-                        eksternId: "${java.util.UUID.randomUUID()}"
+                        eksternId: "${UUID.randomUUID()}"
                         virksomhetsnummer: ${'$'}vnr
+                        ${if ("frist" in vars) "frist: ${'$'}frist" else ""}
+                        ${if ("grupperingsid" in vars) "grupperingsid: ${'$'}grupperingsid" else ""}
                     }
                     mottakere: [
                         {
@@ -633,6 +658,7 @@ fun nyBeskjed(vars: List<String>, mottaker: String): String =
                     metadata: {
                         eksternId: "${java.util.UUID.randomUUID()}"
                         virksomhetsnummer: ${'$'}vnr
+                        ${if ("grupperingsid" in vars) "grupperingsid: ${'$'}grupperingsid" else ""}
                     }
                     mottakere: [
                         {
@@ -676,7 +702,7 @@ fun nySak(vars: List<String>, mottaker: String): String =
     """
         mutation NySak(${vars.graphQLParameters(mapOf("hardDelete" to "FutureTemporalInput"))}) {
             nySak(
-                grupperingsid: "${java.util.UUID.randomUUID()}"
+                grupperingsid: ${'$'}grupperingsid
                 merkelapp: "fager"
                 virksomhetsnummer: ${'$'}vnr
                 mottakere: [
