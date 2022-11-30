@@ -44,6 +44,32 @@ fun Route.handleForm(path: String, body: suspend (Parameters) -> String) {
     }
 }
 
+fun notifikasjonFelles(
+    form: Parameters,
+    vararg custom: Pair<String, String?>,
+): Map<String, String?> {
+    val variables = mapOf(
+        "vnr" to form["vnr"].toString(),
+        "tekst" to form["tekst"].toString(),
+        "url" to form["url"].toString(),
+        "sms" to form["sms"]!!.ifBlank { null },
+        "epost" to form["epost"]!!.ifBlank { null },
+        "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
+    ) + custom.toMap()
+    return variables.filterValues { it != null }
+}
+
+fun oppgaveFelles(form: Parameters, vararg custom: Pair<String, String?>): Map<String, String?> {
+    return notifikasjonFelles(
+        form,
+        "frist" to form["frist"]!!.ifBlank { null },
+        "paaminnelse_konkret" to form["paaminnelse_konkret"]!!.ifBlank { null },
+        "paaminnelse_etter_opprettelse" to form["paaminnelse_etter_opprettelse"]!!.ifBlank { null },
+        "paaminnelse_for_frist" to form["paaminnelse_for_frist"]!!.ifBlank { null },
+        *custom,
+    )
+}
+
 fun main() {
 
     embeddedServer(Netty, port = 8080) {
@@ -56,81 +82,148 @@ fun main() {
                 call.respondHtml(sendPage)
             }
 
-            handleForm("/opprett_notifikasjon_altinn") { form ->
-                sendNotifikasjon(
-                    type = form["type"].toString(),
-                    variables = mapOf(
-                        "vnr" to form["vnr"].toString(),
-                        "tekst" to form["tekst"].toString(),
-                        "url" to form["url"].toString(),
-                        "serviceCode" to form["scode"].toString(),
-                        "serviceEdition" to form["sedit"].toString(),
-                        "sms" to form["sms"]!!.ifBlank { null },
-                        "epost" to form["epost"]!!.ifBlank { null },
-                        "frist" to form["frist"]!!.ifBlank { null },
-                        "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
-                    ).filterValues { it != null },
-                    mottaker = """
-                        altinn: {
-                            serviceCode: ${'$'}serviceCode
-                            serviceEdition: ${'$'}serviceEdition
-                        }
-                    """,
+            handleForm("/opprett_beskjed_altinn") { form ->
+                val variables = notifikasjonFelles(
+                    form,
+                    "serviceCode" to form["scode"].toString(),
+                    "serviceEdition" to form["sedit"].toString(),
+                )
+                executeGraphql(
+                    nyBeskjed(
+                        variables.keys.toList(),
+                        mottaker = """
+                            altinn: {
+                                serviceCode: ${'$'}serviceCode
+                                serviceEdition: ${'$'}serviceEdition
+                            }
+                         """
+                    ),
+                    variables = variables
                 )
             }
-            handleForm("/opprett_notifikasjon_digisyfo") { form ->
-                sendNotifikasjon(
-                    type = form["type"].toString(), mottaker = """
-                            naermesteLeder: {
-                                naermesteLederFnr: ${'$'}fnrLeder
-                                ansattFnr: ${'$'}fnrSykmeldt
-                            }
-                        """,
-                    variables = mapOf(
-                        "vnr" to form["vnr"].toString(),
-                        "tekst" to form["tekst"].toString(),
-                        "url" to form["url"].toString(),
-                        "fnrLeder" to form["fnrleder"].toString(),
-                        "fnrSykmeldt" to form["fnrsyk"].toString(),
-                        "frist" to form["frist"]!!.ifBlank { null },
-                        "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
-                    ).filterValues { it != null },
+            handleForm("/opprett_beskjed_digisyfo") { form ->
+                val variables = notifikasjonFelles(
+                    form,
+                    "fnrLeder" to form["fnrleder"].toString(),
+                    "fnrSykmeldt" to form["fnrsyk"].toString(),
+                )
+                executeGraphql(
+                    nyBeskjed(
+                        variables.keys.toList(),
+                        mottaker = """
+                                   naermesteLeder: {
+                                       naermesteLederFnr: ${'$'}fnrLeder
+                                       ansattFnr: ${'$'}fnrSykmeldt
+                                   }
+                                   """
+                    ),
+                    variables = variables
                 )
             }
-            handleForm("/opprett_notifikasjon_altinn_rolle") { form ->
-                sendNotifikasjon(
-                    type = form["type"].toString(),
-                    variables = mapOf(
-                        "vnr" to form["vnr"].toString(),
-                        "tekst" to form["tekst"].toString(),
-                        "url" to form["url"].toString(),
-                        "roleDefinitionCode" to form["rcode"].toString(),
-                        "frist" to form["frist"]!!.ifBlank { null },
-                        "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
-                    ).filterValues { it != null },
-                    mottaker = """
-                            altinnRolle: {
-                                roleDefinitionCode: ${'$'}roleDefinitionCode
-                            }
-                        """,
+            handleForm("/opprett_beskjed_altinn_rolle") { form ->
+                val variables = notifikasjonFelles(
+                    form,
+                    "roleDefinitionCode" to form["rcode"].toString(),
+                )
+                executeGraphql(
+                    nyBeskjed(
+                        variables.keys.toList(),
+                        mottaker = """
+                                                    altinnRolle: {
+                                                        roleDefinitionCode: ${'$'}roleDefinitionCode
+                                                    }
+                                                """
+                    ),
+                    variables = variables
+                )
+            }
+            handleForm("/opprett_beskjed_altinn_reportee") { form ->
+                val variables = notifikasjonFelles(
+                    form,
+                    "fnr" to form["fnr"].toString(),
+                )
+                executeGraphql(
+                    nyBeskjed(
+                        variables.keys.toList(),
+                        mottaker = """
+                                                    altinnReportee: {
+                                                        fnr: ${'$'}fnr
+                                                    }
+                                                """
+                    ),
+                    variables = variables
+                )
+            }
+            handleForm("/opprett_oppgave_altinn") { form ->
+                val variables = oppgaveFelles(
+                    form,
+                    "serviceCode" to form["scode"].toString(),
+                    "serviceEdition" to form["sedit"].toString(),
+                )
+                executeGraphql(
+                    nyOppgave(
+                        variables.keys.toList(),
+                        mottaker = """
+                                                altinn: {
+                                                    serviceCode: ${'$'}serviceCode
+                                                    serviceEdition: ${'$'}serviceEdition
+                                                }
+                                            """
+                    ),
+                    variables = variables
+                )
+            }
+            handleForm("/opprett_oppgave_digisyfo") { form ->
+                val variables = oppgaveFelles(
+                    form,
+                    "fnrLeder" to form["fnrleder"].toString(),
+                    "fnrSykmeldt" to form["fnrsyk"].toString(),
+                )
+                executeGraphql(
+                    nyOppgave(
+                        variables.keys.toList(),
+                        mottaker = """
+                                                    naermesteLeder: {
+                                                        naermesteLederFnr: ${'$'}fnrLeder
+                                                        ansattFnr: ${'$'}fnrSykmeldt
+                                                    }
+                                                """
+                    ),
+                    variables = variables
+                )
+            }
+            handleForm("/opprett_oppgave_altinn_rolle") { form ->
+                val variables = oppgaveFelles(
+                    form,
+                    "roleDefinitionCode" to form["rcode"].toString(),
+                )
+                executeGraphql(
+                    nyOppgave(
+                        variables.keys.toList(),
+                        mottaker = """
+                                   altinnRolle: {
+                                   roleDefinitionCode: ${'$'}roleDefinitionCode
+                                   }
+                                   """
+                    ),
+                    variables = variables
                 )
             }
             handleForm("/opprett_notifikasjon_altinn_reportee") { form ->
-                sendNotifikasjon(
-                    type = form["type"].toString(),
-                    variables = mapOf(
-                        "vnr" to form["vnr"].toString(),
-                        "fnr" to form["fnr"].toString(),
-                        "tekst" to form["tekst"].toString(),
-                        "url" to form["url"].toString(),
-                        "frist" to form["frist"]!!.ifBlank { null },
-                        "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
-                    ).filterValues { it != null },
-                    mottaker = """
-                            altinnReportee: {
-                                fnr: ${'$'}fnr
-                            }
-                        """,
+                val variables = oppgaveFelles(
+                    form,
+                    "fnr" to form["fnr"].toString(),
+                )
+                executeGraphql(
+                    nyOppgave(
+                        variables.keys.toList(),
+                        mottaker = """
+                                                    altinnReportee: {
+                                                        fnr: ${'$'}fnr
+                                                    }
+                                                """
+                    ),
+                    variables = variables
                 )
             }
             handleForm("/oppgave_utfoert") { form ->
@@ -298,14 +391,6 @@ suspend fun oppdaterStatusTilSak(id: String, nyLenkeTilSak: String, nyTekst: Str
 
 }
 
-suspend fun sendNotifikasjon(type: String, mottaker: String, variables: Map<String, Any?>): String {
-    return when (type) {
-        "beskjed" -> executeGraphql(nyBeskjed(variables.keys.toList(), mottaker), variables)
-        "oppgave" -> executeGraphql(nyOppgave(variables.keys.toList(), mottaker), variables)
-        else -> "ukjent type '$type' :("
-    }
-}
-
 suspend fun executeGraphql(query: String, variables: Map<String, Any?>): String {
     log.info("Ville ha sendt: {}, {}", query, variables)
     val requestBody = objectMapper.writeValueAsString(
@@ -343,23 +428,6 @@ fun inputs(name: String, inpLabel: String, inpValue: String = ""): String {
 
 
 // language=HTML
-fun notifikasjonstypevalg(): String {
-    val beskjedId = UUID.randomUUID().toString()
-    val oppgaveId = UUID.randomUUID().toString()
-    return """
-        <section class="nes-container with-title">
-            <h3 class='title'>Notifikasjonstype</h3>
-            <label for="${beskjedId}">
-                <input type="radio" class='nes-radio' id="${beskjedId}" name="type" value="beskjed" checked> 
-                <span>beskjed</span>
-            </label>
-            <label for="${oppgaveId}">
-                <input type="radio" class='nes-radio' id="${oppgaveId}" name="type" value="oppgave">
-                <span>oppgave</span>
-            </label>
-        </section>
-        """
-}
 
 // language=HTML
 fun inputSection(
@@ -413,13 +481,93 @@ val sendPage: String =
                   html, body, pre, code, kbd, samp {
                       font-family: "Press Start 2P",serif;
                   }
+                  
+                  input:checked + label.nes-btn {
+                    color: #fff;
+                    background-color: #92cc41;
+                  }
+                  
+                  #beskjed_tab, #oppgave_tab, #felles_tab, #sak_tab {
+                    display: none;
+                  }
+                  
+                  #beskjed:checked ~ #beskjed_tab,
+                  #oppgave:checked ~ #oppgave_tab,
+                  #felles:checked ~ #felles_tab,
+                  #sak:checked ~ #sak_tab {
+                        display: block;
+                  }
+                  
                 </style>
             </head>
-            <body style='display: flex'>
-                <section class="nes-container" style='overflow: scroll; width: 50vw'>
-                    <h1>Opprett notifikasjon</h1>
+            <body>
+                <input type="radio" id="beskjed" name="tab" checked style='display: none'>
+                <label class="nes-btn" for="beskjed">Beskjed</label>
+                
+                <input type="radio" id="oppgave" name="tab" style='display: none'>
+                <label class="nes-btn" for="oppgave">Oppgave</label>
+                
+                <input type="radio" id="felles" name="tab" style='display: none'>
+                <label class="nes-btn" for="felles">Felles</label>
+                
+                <input type="radio" id="sak" name="tab" style='display: none'>
+                <label class="nes-btn" for="sak">Sak</label>
+            
+                <section id="beskjed_tab" class="nes-container" style='overflow: scroll'>
+                    <h1>Opprett beskjed</h1>
+                     ${inputSection("Mottakere: altinn-tjeneste", "/opprett_beskjed_altinn") {
+        """
+                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                        ${inputs("scode", "Service code", "4936")}
+                        ${inputs("sedit", "Service edition", "1")}
+                        ${inputs("tekst", "Tekst", "Dette er en test-melding")}
+                        ${inputs("url", "url", "https://dev.nav.no")}
+                        ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
+                        ${inputs("epost", "varsle epost", "")}
+                        ${inputs("sms", "varsle sms", "")}
+                        """
+    }
+    }
+                    ${
+        inputSection("Mottakere: naermeste leder", "/opprett_beskjed_digisyfo") {
+            """
+                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                        ${inputs("fnrleder", "Fnr leder")}
+                        ${inputs("fnrsyk", "Fnr sykmeldt")}
+                        ${inputs("tekst", "Tekst", "Dette er en test-melding")}
+                        ${inputs("url", "url", "https://dev.nav.no")}
+                        ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
+                        """
+        }
+    }
+                    ${
+        inputSection("Mottakere: altinn rolle", "/opprett_beskjed_altinn_rolle") {
+            """
+                            ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                            ${inputs("altinn_rcode", "altinn rollekode", "DAGL")}
+                            ${inputs("tekst", "Tekst", "Dette er en test-melding")}
+                            ${inputs("url", "url", "https://dev.nav.no")} 
+                            ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
+                        """
+        }
+    }
+                    ${
+        inputSection("Mottakere: altinn reportee", "/opprett_beskjed_altinn_reportee") {
+            """
+                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                        ${inputs("fnr", "altinn reportee", "16120101181")}
+                        ${inputs("tekst", "Tekst", "Dette er en test-melding")}
+                        ${inputs("url", "url", "https://dev.nav.no")}
+                        ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
+                    """
+        }
+    }
+    
+                </section>
+                <section id="oppgave_tab" class="nes-container" style='overflow: scroll'>
+                    <h1>Opprett oppgave</h1>
                      ${
-        inputSection("Mottakere: altinn-tjeneste", "/opprett_notifikasjon_altinn") {
+        inputSection("Mottakere: altinn-tjeneste", "/opprett_oppgave_altinn") {
             """
                         ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                         ${inputs("scode", "Service code", "4936")}
@@ -427,15 +575,17 @@ val sendPage: String =
                         ${inputs("tekst", "Tekst", "Dette er en test-melding")}
                         ${inputs("url", "url", "https://dev.nav.no")}
                         ${inputs("frist", "frist", "")}
+                        ${inputs("paaminnelse_konkret", "Påminnelse YYYY-MM-DDTHH:MM:SS", "")}
+                        ${inputs("paaminnelse_etter_opprettelse", "Påminnelse etter opprettelse", "")}
+                        ${inputs("paaminnelse_for_frist", "Påminnelse før frist", "")}
                         ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                         ${inputs("epost", "varsle epost", "")}
                         ${inputs("sms", "varsle sms", "")}
-                        ${notifikasjonstypevalg()}
                         """
         }
     }
                     ${
-        inputSection("Mottakere: naermeste leder", "/opprett_notifikasjon_digisyfo") {
+        inputSection("Mottakere: naermeste leder", "/opprett_oppgave_digisyfo") {
             """
                         ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                         ${inputs("fnrleder", "Fnr leder")}
@@ -444,12 +594,11 @@ val sendPage: String =
                         ${inputs("url", "url", "https://dev.nav.no")}
                         ${inputs("frist", "frist", "")}
                         ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
-                        ${notifikasjonstypevalg()}
                         """
         }
     }
                     ${
-        inputSection("Mottakere: altinn rolle", "/opprett_notifikasjon_altinn_rolle") {
+        inputSection("Mottakere: altinn rolle", "/opprett_oppgave_altinn_rolle") {
             """
                             ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                             ${inputs("altinn_rcode", "altinn rollekode", "DAGL")}
@@ -457,12 +606,11 @@ val sendPage: String =
                             ${inputs("url", "url", "https://dev.nav.no")} 
                             ${inputs("frist", "frist", "")}
                             ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
-                            ${notifikasjonstypevalg()}
                         """
         }
     }
                     ${
-        inputSection("Mottakere: altinn reportee", "/opprett_notifikasjon_altinn_reportee") {
+        inputSection("Mottakere: altinn reportee", "/opprett_oppgave_altinn_reportee") {
             """
                         ${inputs("vnr", "Virksomhetsnummer", "910825526")}
                         ${inputs("fnr", "altinn reportee", "16120101181")}
@@ -470,13 +618,7 @@ val sendPage: String =
                         ${inputs("url", "url", "https://dev.nav.no")}
                         ${inputs("frist", "frist", "")}
                         ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
-                        ${notifikasjonstypevalg()}
                     """
-        }
-    }
-                    ${
-        inputSection("Hard Delete notifikasjon", "/hard_delete_notifikasjon", "slett", "is-error") {
-            inputs("id", "id")
         }
     }
                     ${
@@ -490,7 +632,15 @@ val sendPage: String =
         }
     }
                 </section>
-                <section class="nes-container with-title" style='overflow: scroll; width: 50vw'>
+                <section id="felles_tab" class="nes-container with-title" style='overflow: scroll;'>
+                    <h1>Felles</h1>
+                    ${
+        inputSection("Hard Delete notifikasjon", "/hard_delete_notifikasjon", "slett", "is-error") {
+            inputs("id", "id")
+        }
+    }
+                </section>
+                <section id="sak_tab" class="nes-container with-title" style='overflow: scroll; '>
                     <h1>Opprett sak</h1>
                     ${
         inputSection("Mottakere: altinn tjeneste", "/opprett_sak_servicecode") {
@@ -589,7 +739,12 @@ fun okPage(utfall: String): String =
 fun nyOppgave(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NyOppgave(${vars.graphQLParameters(mapOf("frist" to "ISO8601Date"))}) {
+        mutation NyOppgave(${vars.graphQLParameters(mapOf(
+        "frist" to "ISO8601Date",
+        "paaminnelse_konkret" to "ISO8601LocalDateTime",
+        "paaminnelse_etter_opprettelse" to "ISO8601Duration",
+        "paaminnelse_for_frist" to "ISO8601Duration",
+    ))}) {
             nyOppgave(
                 nyOppgave: {
                     metadata: {
@@ -609,6 +764,36 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
                     }
                     ${if ("frist" in vars) "frist: ${'$'}frist" else ""}
                     ${vars.eksterneVarsler()}
+                    ${ if ("paaminnelse_konkret" in vars)
+                        """
+                            paaminnelse: {
+                                tidspunkt: {
+                                    konkret: ${'$'}paaminnelse_konkret
+                                }
+                            }
+                        """
+                        else ""
+                    }
+                    ${ if ("paaminnelse_for_frist" in vars)
+        """
+                            paaminnelse: {
+                                tidspunkt: {
+                                    foer_frist: ${'$'}for_frist
+                                }
+                            }
+                        """
+    else ""
+    }
+                    ${ if ("paaminnelse_etter_opprettelse" in vars)
+        """
+                            paaminnelse: {
+                                tidspunkt: {
+                                    etter_opprettelse: ${'$'}etter_opprettelse
+                                }
+                            }
+                        """
+    else ""
+    }
                 }
             ) {
                 __typename
