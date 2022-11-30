@@ -391,6 +391,11 @@ suspend fun oppdaterStatusTilSak(id: String, nyLenkeTilSak: String, nyTekst: Str
 
 }
 
+val graphQLEndpoint = if (System.getenv("NAIS_CLUSTER_NAME") == "dev-gcp")
+    "http://notifikasjon-produsent-api/api/graphql"
+else
+    "https://notifikasjon-fake-produsent-api.labs.nais.io/"
+
 suspend fun executeGraphql(query: String, variables: Map<String, Any?>): String {
     log.info("Ville ha sendt: {}, {}", query, variables)
     val requestBody = objectMapper.writeValueAsString(
@@ -400,7 +405,7 @@ suspend fun executeGraphql(query: String, variables: Map<String, Any?>): String 
         )
     )
     val accessToken = getAccessToken()
-    val response: HttpResponse = httpClient.post("http://notifikasjon-produsent-api/api/graphql") {
+    val response: HttpResponse = httpClient.post(graphQLEndpoint) {
         header(HttpHeaders.Authorization, "Bearer $accessToken")
         header(HttpHeaders.ContentType, "application/json")
         header(HttpHeaders.Accept, "application/json")
@@ -449,6 +454,9 @@ fun inputSection(
 }
 
 suspend fun getAccessToken(): String {
+    if (System.getenv("NAIS_CLUSTER_NAME") != "dev-gcp") {
+        return ""
+    }
     val tokenEndpoint = System.getenv("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT")!!
     val tenantId = System.getenv("AZURE_APP_TENANT_ID")!!
     val clientId = System.getenv("AZURE_APP_CLIENT_ID")!!
