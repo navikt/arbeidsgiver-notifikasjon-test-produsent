@@ -778,7 +778,7 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
         """
                             paaminnelse: {
                                 tidspunkt: {
-                                    foer_frist: ${'$'}for_frist
+                                    foer_frist: ${'$'}paaminnelse_for_frist
                                 }
                             }
                         """
@@ -788,7 +788,7 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
         """
                             paaminnelse: {
                                 tidspunkt: {
-                                    etter_opprettelse: ${'$'}etter_opprettelse
+                                    etter_opprettelse: ${'$'}paaminnelse_etter_opprettelse
                                 }
                             }
                         """
