@@ -120,40 +120,6 @@ fun main() {
                     variables = variables
                 )
             }
-            handleForm("/opprett_beskjed_altinn_rolle") { form ->
-                val variables = notifikasjonFelles(
-                    form,
-                    "roleDefinitionCode" to form["rcode"].toString(),
-                )
-                executeGraphql(
-                    nyBeskjed(
-                        variables.keys.toList(),
-                        mottaker = """
-                                                    altinnRolle: {
-                                                        roleDefinitionCode: ${'$'}roleDefinitionCode
-                                                    }
-                                                """
-                    ),
-                    variables = variables
-                )
-            }
-            handleForm("/opprett_beskjed_altinn_reportee") { form ->
-                val variables = notifikasjonFelles(
-                    form,
-                    "fnr" to form["fnr"].toString(),
-                )
-                executeGraphql(
-                    nyBeskjed(
-                        variables.keys.toList(),
-                        mottaker = """
-                                                    altinnReportee: {
-                                                        fnr: ${'$'}fnr
-                                                    }
-                                                """
-                    ),
-                    variables = variables
-                )
-            }
             handleForm("/opprett_oppgave_altinn") { form ->
                 val variables = oppgaveFelles(
                     form,
@@ -186,40 +152,6 @@ fun main() {
                                                     naermesteLeder: {
                                                         naermesteLederFnr: ${'$'}fnrLeder
                                                         ansattFnr: ${'$'}fnrSykmeldt
-                                                    }
-                                                """
-                    ),
-                    variables = variables
-                )
-            }
-            handleForm("/opprett_oppgave_altinn_rolle") { form ->
-                val variables = oppgaveFelles(
-                    form,
-                    "roleDefinitionCode" to form["rcode"].toString(),
-                )
-                executeGraphql(
-                    nyOppgave(
-                        variables.keys.toList(),
-                        mottaker = """
-                                   altinnRolle: {
-                                   roleDefinitionCode: ${'$'}roleDefinitionCode
-                                   }
-                                   """
-                    ),
-                    variables = variables
-                )
-            }
-            handleForm("/opprett_notifikasjon_altinn_reportee") { form ->
-                val variables = oppgaveFelles(
-                    form,
-                    "fnr" to form["fnr"].toString(),
-                )
-                executeGraphql(
-                    nyOppgave(
-                        variables.keys.toList(),
-                        mottaker = """
-                                                    altinnReportee: {
-                                                        fnr: ${'$'}fnr
                                                     }
                                                 """
                     ),
@@ -279,38 +211,6 @@ fun main() {
                             altinn: {
                                 serviceCode: ${'$'}serviceCode
                                 serviceEdition: ${'$'}serviceEdition
-                            }
-                        """,
-                )
-            }
-            handleForm("/opprett_sak_rolle") { form ->
-                opprettNySak(
-                    variables = mapOf(
-                        "grupperingsid" to form["grupperingsid"].toString(),
-                        "vnr" to form["vnr"].toString(),
-                        "tittel" to form["tittel"].toString(),
-                        "url" to form["url"].toString(),
-                        "roleDefinitionCode" to form["rcode"].toString(),
-                    ),
-                    mottaker = """
-                            altinnRolle: {
-                                roleDefinitionCode: ${'$'}roleDefinitionCode
-                            }
-                        """,
-                )
-            }
-            handleForm("/opprett_sak_reportee") { form ->
-                opprettNySak(
-                    variables = mapOf(
-                        "grupperingsid" to form["grupperingsid"].toString(),
-                        "vnr" to form["vnr"].toString(),
-                        "fnr" to form["fnr"].toString(),
-                        "tittel" to form["tittel"].toString(),
-                        "url" to form["url"].toString(),
-                    ),
-                    mottaker = """
-                            altinnReportee: {
-                                fnr: ${'$'}fnr
                             }
                         """,
                 )
@@ -548,28 +448,6 @@ val sendPage: String =
                         """
         }
     }
-                    ${
-        inputSection("Mottakere: altinn rolle", "/opprett_beskjed_altinn_rolle") {
-            """
-                            ${inputs("vnr", "Virksomhetsnummer", "910825526")}
-                            ${inputs("altinn_rcode", "altinn rollekode", "DAGL")}
-                            ${inputs("tekst", "Tekst", "Dette er en test-melding")}
-                            ${inputs("url", "url", "https://dev.nav.no")} 
-                            ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
-                        """
-        }
-    }
-                    ${
-        inputSection("Mottakere: altinn reportee", "/opprett_beskjed_altinn_reportee") {
-            """
-                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
-                        ${inputs("fnr", "altinn reportee", "16120101181")}
-                        ${inputs("tekst", "Tekst", "Dette er en test-melding")}
-                        ${inputs("url", "url", "https://dev.nav.no")}
-                        ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
-                    """
-        }
-    }
     
                 </section>
                 <section id="oppgave_tab" class="nes-container" style='overflow: scroll'>
@@ -606,30 +484,6 @@ val sendPage: String =
         }
     }
                     ${
-        inputSection("Mottakere: altinn rolle", "/opprett_oppgave_altinn_rolle") {
-            """
-                            ${inputs("vnr", "Virksomhetsnummer", "910825526")}
-                            ${inputs("altinn_rcode", "altinn rollekode", "DAGL")}
-                            ${inputs("tekst", "Tekst", "Dette er en test-melding")}
-                            ${inputs("url", "url", "https://dev.nav.no")} 
-                            ${inputs("frist", "frist", "")}
-                            ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
-                        """
-        }
-    }
-                    ${
-        inputSection("Mottakere: altinn reportee", "/opprett_oppgave_altinn_reportee") {
-            """
-                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
-                        ${inputs("fnr", "altinn reportee", "16120101181")}
-                        ${inputs("tekst", "Tekst", "Dette er en test-melding")}
-                        ${inputs("url", "url", "https://dev.nav.no")}
-                        ${inputs("frist", "frist", "")}
-                        ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
-                    """
-        }
-    }
-                    ${
         inputSection("Oppgave utført", "/oppgave_utfoert", "sett utført") {
             inputs("id", "id")
         }
@@ -660,28 +514,6 @@ val sendPage: String =
                         ${inputs("tittel", "Tekst", "Dette er en test-melding")}
                         ${inputs("url", "url", "https://dev.nav.no")}
                         ${inputs("hardDelete", "hardDelete", "")}
-                        """
-        }
-    }
-                    ${
-        inputSection("Mottakere: altinn rolle", "/opprett_sak_rolle") {
-            """
-                            ${inputs("grupperingsid", "Grupperingsid", "${UUID.randomUUID()}")}
-                            ${inputs("vnr", "Virksomhetsnummer", "910825526")}
-                            ${inputs("rcode", "altinn rollekode", "DAGL")}
-                            ${inputs("tittel", "Tittel", "Dette er en test-melding")}
-                            ${inputs("url", "url", "https://dev.nav.no")}
-                        """
-        }
-    }
-                    ${
-        inputSection("Mottakere: altinn reportee", "/opprett_sak_reportee") {
-            """
-                            ${inputs("grupperingsid", "Grupperingsid", "${UUID.randomUUID()}")}
-                            ${inputs("vnr", "Virksomhetsnummer", "910825526")}
-                            ${inputs("fnr", "altinn reportee", "16120101181")}
-                            ${inputs("tittel", "Tittel", "Dette er en test-melding")}
-                            ${inputs("url", "url", "https://dev.nav.no")}
                         """
         }
     }
