@@ -488,8 +488,10 @@ val sendPage: String =
     }
                     ${
         inputSection("Oppgave utført", "/oppgave_utfoert", "sett utført") {
-            inputs("id", "id")
-            inputs("nyLenke", "nyLenke")
+            """
+                ${inputs("id", "id")}
+                ${inputs("nyLenke", "nyLenke")}
+            """
         }
     }
                     ${
