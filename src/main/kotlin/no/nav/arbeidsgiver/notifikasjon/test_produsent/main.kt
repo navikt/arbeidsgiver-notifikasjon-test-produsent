@@ -161,8 +161,8 @@ fun main() {
             handleForm("/oppgave_utfoert") { form ->
                 executeGraphql(
                     """
-                    mutation OppgaveUtfoert(${'$'}id: ID!) {
-                      oppgaveUtfoert(id: ${'$'}id) {
+                    mutation OppgaveUtfoert(${'$'}id: ID!, ${'$'}nyLenke: String) {
+                      oppgaveUtfoert(id: ${'$'}id, nyLenke: ${'$'}nyLenke) {
                         __typename
                         ... on Error {
                           feilmelding
@@ -173,7 +173,10 @@ fun main() {
                       }
                     }
                     """.trimIndent(),
-                    mapOf("id" to form["id"].toString())
+                    mapOf(
+                        "id" to form["id"].toString(),
+                        "nyLenke" to form["nyLenke"]!!.ifBlank { null }
+                    )
                 )
             }
             handleForm("/oppgave_utgaatt") { form ->
@@ -486,6 +489,7 @@ val sendPage: String =
                     ${
         inputSection("Oppgave utført", "/oppgave_utfoert", "sett utført") {
             inputs("id", "id")
+            inputs("nyLenke", "nyLenke")
         }
     }
                     ${
