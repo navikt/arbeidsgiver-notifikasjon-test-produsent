@@ -54,7 +54,8 @@ fun notifikasjonFelles(
         "url" to form["url"].toString(),
         "sms" to form["sms"]!!.ifBlank { null },
         "epost" to form["epost"]!!.ifBlank { null },
-        "altinntjeneste" to form["altinntjeneste"]!!.ifBlank { null },
+        "altinntjenesteServiceCode" to form["altinntjenesteServiceCode"]!!.ifBlank { null },
+        "altinntjenesteServiceEdition" to form["altinntjenesteServiceEdition"]!!.ifBlank { null },
         "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
     ) + custom.toMap()
     return variables.filterValues { it != null }
@@ -437,7 +438,8 @@ val sendPage: String =
                         ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                         ${inputs("epost", "varsle epost", "")}
                         ${inputs("sms", "varsle sms", "")}
-                        ${inputs("altinntjeneste", "varsle tjeneste", "")}
+                        ${inputs("altinntjenesteServiceCode", "varsle servicecode", "")}
+                        ${inputs("altinntjenesteServiceEdition", "varsle serviceedition", "")}
                         """
     }
     }
@@ -472,7 +474,8 @@ val sendPage: String =
                         ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                         ${inputs("epost", "varsle epost", "")}
                         ${inputs("sms", "varsle sms", "")}
-                        ${inputs("altinntjeneste", "varsle tjeneste", "")}
+                        ${inputs("altinntjenesteServiceCode", "varsle servicecode", "")}
+                        ${inputs("altinntjenesteServiceEdition", "varsle serviceedition", "")}
                         """
         }
     }
@@ -780,7 +783,7 @@ fun hardDeleteSak(): String =
 private fun List<String>.eksterneVarsler(): String {
     val harSms = contains("sms")
     val harEpost = contains("epost")
-    val harAltinntjeneste = contains("altinntjeneste")
+    val harAltinntjeneste = contains("altinntjenesteServiceCode") && contains("altinntjenesteServiceEdition")
     if (!harSms && !harEpost && !harAltinntjeneste) {
         return ""
     }
@@ -820,8 +823,8 @@ private fun List<String>.eksterneVarsler(): String {
         {
           altinntjeneste: {
             mottaker: {
-              serviceCode: ${'$'}serviceCode
-              serviceEdition: ${'$'}serviceEdition
+              serviceCode: ${'$'}altinntjenesteServiceCode
+              serviceEdition: ${'$'}altinntjenesteServiceEdition
             }
             tittel: "Test varsel fra test-produsent"
             innhold: "Dette er en test"
