@@ -54,6 +54,8 @@ fun notifikasjonFelles(
         "url" to form["url"].toString(),
         "sms" to form["sms"]!!.ifBlank { null },
         "epost" to form["epost"]!!.ifBlank { null },
+        "altinntjenesteServiceCode" to form["altinntjenesteServiceCode"]!!.ifBlank { null },
+        "altinntjenesteServiceEdition" to form["altinntjenesteServiceEdition"]!!.ifBlank { null },
         "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
     ) + custom.toMap()
     return variables.filterValues { it != null }
@@ -436,6 +438,8 @@ val sendPage: String =
                         ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                         ${inputs("epost", "varsle epost", "")}
                         ${inputs("sms", "varsle sms", "")}
+                        ${inputs("altinntjenesteServiceCode", "varsle servicecode", "")}
+                        ${inputs("altinntjenesteServiceEdition", "varsle serviceedition", "")}
                         """
     }
     }
@@ -470,6 +474,8 @@ val sendPage: String =
                         ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                         ${inputs("epost", "varsle epost", "")}
                         ${inputs("sms", "varsle sms", "")}
+                        ${inputs("altinntjenesteServiceCode", "varsle servicecode", "")}
+                        ${inputs("altinntjenesteServiceEdition", "varsle serviceedition", "")}
                         """
         }
     }
@@ -777,7 +783,8 @@ fun hardDeleteSak(): String =
 private fun List<String>.eksterneVarsler(): String {
     val harSms = contains("sms")
     val harEpost = contains("epost")
-    if (!harSms && !harEpost) {
+    val harAltinntjeneste = contains("altinntjenesteServiceCode") && contains("altinntjenesteServiceEdition")
+    if (!harSms && !harEpost && !harAltinntjeneste) {
         return ""
     }
 
@@ -812,8 +819,24 @@ private fun List<String>.eksterneVarsler(): String {
           }
         }
     """
+    val altinntjenestePart = """
+        {
+          altinntjeneste: {
+            mottaker: {
+              serviceCode: ${'$'}altinntjenesteServiceCode
+              serviceEdition: ${'$'}altinntjenesteServiceEdition
+            }
+            tittel: "Test varsel fra test-produsent"
+            innhold: "Dette er en test"
+            sendetidspunkt: {
+              sendevindu: NKS_AAPNINGSTID
+            }
+          }
+        }
+    """
     return """eksterneVarsler: [
         ${if (harSms) smsPart else ""}
         ${if (harEpost) epostPart else ""}
+        ${if (harAltinntjeneste) altinntjenestePart else ""}
     ]"""
 }
