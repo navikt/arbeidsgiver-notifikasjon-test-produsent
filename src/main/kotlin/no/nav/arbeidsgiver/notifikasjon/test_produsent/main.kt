@@ -54,6 +54,7 @@ fun notifikasjonFelles(
         "url" to form["url"].toString(),
         "sms" to form["sms"]!!.ifBlank { null },
         "epost" to form["epost"]!!.ifBlank { null },
+        "altinntjeneste" to form["altinntjeneste"]!!.ifBlank { null },
         "grupperingsid" to form["grupperingsid"]!!.ifBlank { null },
     ) + custom.toMap()
     return variables.filterValues { it != null }
@@ -436,6 +437,7 @@ val sendPage: String =
                         ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                         ${inputs("epost", "varsle epost", "")}
                         ${inputs("sms", "varsle sms", "")}
+                        ${inputs("altinntjeneste", "varsle tjeneste", "")}
                         """
     }
     }
@@ -470,6 +472,7 @@ val sendPage: String =
                         ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
                         ${inputs("epost", "varsle epost", "")}
                         ${inputs("sms", "varsle sms", "")}
+                        ${inputs("altinntjeneste", "varsle tjeneste", "")}
                         """
         }
     }
@@ -777,7 +780,8 @@ fun hardDeleteSak(): String =
 private fun List<String>.eksterneVarsler(): String {
     val harSms = contains("sms")
     val harEpost = contains("epost")
-    if (!harSms && !harEpost) {
+    val harAltinntjeneste = contains("altinntjeneste")
+    if (!harSms && !harEpost && !harAltinntjeneste) {
         return ""
     }
 
@@ -812,8 +816,24 @@ private fun List<String>.eksterneVarsler(): String {
           }
         }
     """
+    val altinntjenestePart = """
+        {
+          altinntjeneste: {
+            mottaker: {
+              serviceCode: ${'$'}serviceCode
+              serviceEdition: ${'$'}serviceEdition
+            }
+            tittel: "Test varsel fra test-produsent"
+            innhold: "Dette er en test"
+            sendetidspunkt: {
+              sendevindu: NKS_AAPNINGSTID
+            }
+          }
+        }
+    """
     return """eksterneVarsler: [
         ${if (harSms) smsPart else ""}
         ${if (harEpost) epostPart else ""}
+        ${if (harAltinntjeneste) altinntjenestePart else ""}
     ]"""
 }
