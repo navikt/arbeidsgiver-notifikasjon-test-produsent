@@ -616,36 +616,7 @@ fun nyOppgave(vars: List<String>, mottaker: String): String =
                     }
                     ${if ("frist" in vars) "frist: ${'$'}frist" else ""}
                     ${vars.eksterneVarsler()}
-                    ${ if ("paaminnelse_konkret" in vars)
-                        """
-                            paaminnelse: {
-                                tidspunkt: {
-                                    konkret: ${'$'}paaminnelse_konkret
-                                }
-                            }
-                        """
-                        else ""
-                    }
-                    ${ if ("paaminnelse_for_frist" in vars)
-        """
-                            paaminnelse: {
-                                tidspunkt: {
-                                    foerFrist: ${'$'}paaminnelse_for_frist
-                                }
-                            }
-                        """
-    else ""
-    }
-                    ${ if ("paaminnelse_etter_opprettelse" in vars)
-        """
-                            paaminnelse: {
-                                tidspunkt: {
-                                    etterOpprettelse: ${'$'}paaminnelse_etter_opprettelse
-                                }
-                            }
-                        """
-    else ""
-    }
+                    ${vars.påminnelse()}
                 }
             ) {
                 __typename
@@ -829,7 +800,7 @@ private fun List<String>.eksterneVarsler(): String {
             tittel: "Test varsel fra test-produsent"
             innhold: "Dette er en test"
             sendetidspunkt: {
-              sendevindu: NKS_AAPNINGSTID
+              sendevindu: LOEPENDE
             }
           }
         }
@@ -839,4 +810,93 @@ private fun List<String>.eksterneVarsler(): String {
         ${if (harEpost) epostPart else ""}
         ${if (harAltinntjeneste) altinntjenestePart else ""}
     ]"""
+}
+private fun List<String>.påminnelse(): String {
+    val harSms = contains("sms")
+    val harEpost = contains("epost")
+    val harAltinntjeneste = contains("altinntjenesteServiceCode") && contains("altinntjenesteServiceEdition")
+
+    val smsPart = """
+        {
+            sms: {
+                mottaker: {
+                  kontaktinfo: {
+                    tlf: ${'$'}sms
+                  }
+                }
+                smsTekst: "Påminnelse: Test sms fra test-produsent"
+                sendevindu: LOEPENDE
+            }
+        }
+    """
+    val epostPart = """
+        {
+          epost: {
+            mottaker: {
+              kontaktinfo: {
+                epostadresse: ${'$'}epost
+              }
+            }
+            epostTittel: "Påminnelse: Test epost fra test-produsent"
+            epostHtmlBody: "Dette er en test av påminnelse"
+            sendevindu: LOEPENDE
+          }
+        }
+    """
+    val altinntjenestePart = """
+        {
+          altinntjeneste: {
+            mottaker: {
+              serviceCode: ${'$'}altinntjenesteServiceCode
+              serviceEdition: ${'$'}altinntjenesteServiceEdition
+            }
+            tittel: "Påminnelse: Test varsel fra test-produsent"
+            innhold: "Dette er en test av påminnelse"
+            sendevindu: LOEPENDE
+          }
+        }
+    """
+
+    val eksterneVarslerPart = if (harSms || harEpost || harAltinntjeneste) {
+        """eksterneVarsler: [
+            ${if (harSms) smsPart else ""}
+            ${if (harEpost) epostPart else ""}
+            ${if (harAltinntjeneste) altinntjenestePart else ""}
+        ]"""
+    } else {
+        ""
+    }
+
+    if (contains("paaminnelse_konkret")) {
+        return """
+            paaminnelse: {
+                tidspunkt: {
+                    konkret: ${'$'}paaminnelse_konkret
+                }
+                $eksterneVarslerPart
+            }
+        """
+    }
+    if (contains("paaminnelse_for_frist")) {
+        return """
+            paaminnelse: {
+                tidspunkt: {
+                    foerFrist: ${'$'}paaminnelse_for_frist
+                }
+                $eksterneVarslerPart
+            }
+        """
+    }
+    if (contains("paaminnelse_etter_opprettelse")) {
+        return """
+            paaminnelse: {
+                tidspunkt: {
+                    etterOpprettelse: ${'$'}paaminnelse_etter_opprettelse
+                }
+                $eksterneVarslerPart
+            }
+        """
+    }
+
+    return ""
 }
