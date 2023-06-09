@@ -8,7 +8,7 @@ metadata:
 spec:
   image: {{image}}
   ingresses:
-    - https://notifikasjon-test-produsent.dev.nav.no
+    - https://notifikasjon-test-produsent.intern.dev.nav.no
   liveness:
     path: /ok
   readiness:
