@@ -800,7 +800,7 @@ private fun List<String>.eksterneVarsler(): String {
             tittel: "Test varsel fra test-produsent"
             innhold: "Dette er en test"
             sendetidspunkt: {
-              sendevindu: LOEPENDE
+              tidspunkt: "2023-08-25T09:00"
             }
           }
         }
