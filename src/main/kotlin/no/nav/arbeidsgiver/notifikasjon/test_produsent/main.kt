@@ -16,6 +16,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import org.slf4j.LoggerFactory
+import java.time.LocalDate
 import java.util.*
 
 val objectMapper = jacksonObjectMapper()
@@ -197,6 +198,27 @@ fun main() {
                     }
                     """.trimIndent(),
                     mapOf("id" to form["id"].toString())
+                )
+            }
+            handleForm("/oppgave_utsett_frist") { form ->
+                executeGraphql(
+                    """
+                    mutation OppgaveUtsettFrist(${'$'}id: ID!, ${'$'}nyFrist: ISO8601Date!) {
+                      oppgaveUtsettFrist(id: ${'$'}id, nyFrist: ${'$'}nyFrist) {
+                        __typename
+                        ... on Error {
+                          feilmelding
+                        }
+                        ... on OppgaveUtsettFristVellykket {
+                          id
+                        }
+                      }
+                    }
+                    """.trimIndent(),
+                    mapOf(
+                        "id" to form["id"].toString(),
+                        "nyFrist" to form["nyFrist"].toString(),
+                    )
                 )
             }
 
@@ -503,6 +525,14 @@ val sendPage: String =
                     ${
         inputSection("Oppgave utgått", "/oppgave_utgaatt", "sett utgått") {
             inputs("id", "id")
+        }
+    }
+                    ${
+        inputSection("Oppgave utsett frist", "/oppgave_utsett_frist", "utsett frist") {
+            """
+                ${inputs("id", "id")}
+                ${inputs("nyFrist", "nyFrist", LocalDate.now().toString())}
+            """
         }
     }
                 </section>
