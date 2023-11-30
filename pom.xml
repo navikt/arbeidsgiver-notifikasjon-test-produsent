@@ -9,7 +9,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <kotlin.version>1.7.20</kotlin.version>
+        <kotlin.version>1.9.21</kotlin.version>
         <ktor.version>2.3.5</ktor.version>
         <jvm.version>17</jvm.version>
         <maven.compiler.source>${jvm.version}</maven.compiler.source>
@@ -98,7 +98,6 @@
 
                 <configuration>
                     <jvmTarget>${jvm.version}</jvmTarget>
-                    <languageVersion>1.5</languageVersion>
                 </configuration>
                 <executions>
                     <execution>
