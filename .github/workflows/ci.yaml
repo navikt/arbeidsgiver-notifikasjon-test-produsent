@@ -24,6 +24,7 @@ jobs:
           tag: ${{ github.sha }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
+          byosbom: target/bom.json
       - uses: nais/deploy/actions/deploy@v1
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/TAG-2087_utsett_frist_test'
         env:
