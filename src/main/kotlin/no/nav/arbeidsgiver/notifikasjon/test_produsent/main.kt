@@ -737,7 +737,7 @@ fun hardDeleteNotifikasjon(): String =
 fun nySak(vars: List<String>, mottaker: String): String =
     // language=GraphQL
     """
-        mutation NySak(${vars.graphQLParameters(mapOf("hardDelete" to "FutureTemporalInput"))}) {
+        mutation NySak(${vars.graphQLParameters(mapOf("hardDelete" to "FutureTemporalInput", "url" to "String"))}) {
             nySak(
                 grupperingsid: ${'$'}grupperingsid
                 merkelapp: "fager"
