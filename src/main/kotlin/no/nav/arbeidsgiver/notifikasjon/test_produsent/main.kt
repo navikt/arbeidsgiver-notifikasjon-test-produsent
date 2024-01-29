@@ -229,7 +229,7 @@ fun main() {
                         "grupperingsid" to form["grupperingsid"].toString(),
                         "vnr" to form["vnr"].toString(),
                         "tittel" to form["tittel"].toString(),
-                        "url" to form["url"].toString(),
+                        "url" to form["url"].toString().ifBlank { null },
                         "serviceCode" to form["scode"].toString(),
                         "serviceEdition" to form["sedit"].toString(),
                         "hardDelete" to form["hardDelete"]?.let { if (it.isNotBlank()) mapOf("om" to it) else null },
@@ -248,7 +248,7 @@ fun main() {
                         "grupperingsid" to form["grupperingsid"].toString(),
                         "vnr" to form["vnr"].toString(),
                         "tittel" to form["tittel"].toString(),
-                        "url" to form["url"].toString(),
+                        "url" to form["url"].toString().ifBlank { null },
                         "fnrLeder" to form["fnrleder"].toString(),
                         "fnrSykmeldt" to form["fnrsyk"].toString()
                     ),
