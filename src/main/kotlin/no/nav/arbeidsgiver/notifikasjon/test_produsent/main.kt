@@ -17,6 +17,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.*
 
 val objectMapper = jacksonObjectMapper()
@@ -69,6 +70,25 @@ fun oppgaveFelles(form: Parameters, vararg custom: Pair<String, String?>): Map<S
         "paaminnelse_konkret" to form["paaminnelse_konkret"]!!.ifBlank { null },
         "paaminnelse_etter_opprettelse" to form["paaminnelse_etter_opprettelse"]!!.ifBlank { null },
         "paaminnelse_for_frist" to form["paaminnelse_for_frist"]!!.ifBlank { null },
+        *custom,
+    )
+}
+
+fun kalenderavtaleFelles(form: Parameters, vararg custom: Pair<String, String?>): Map<String, String?> {
+    return notifikasjonFelles(
+        form + Parameters.build {
+            // påkrevd men ikke i html form enda da det ikke er støttet i api
+           set("sms", "")
+           set("epost", "")
+           set("altinntjenesteServiceCode", "")
+           set("altinntjenesteServiceEdition", "")
+        },
+        "startTidspunkt" to form["start_tidspunkt"]!!.ifBlank { null },
+        "sluttTidspunkt" to form["slutt_tidspunkt"]!!.ifBlank { null },
+        "adresse" to form["adresse"]!!.ifBlank { null },
+        "postnummer" to form["postnummer"]!!.ifBlank { null },
+        "poststed" to form["poststed"]!!.ifBlank { null },
+        "erDigitalt" to form["erDigitalt"]!!.ifBlank { null },
         *custom,
     )
 }
@@ -222,6 +242,44 @@ fun main() {
                 )
             }
 
+            handleForm("/opprett_kalenderavtale_altinn") { form ->
+                val variables = kalenderavtaleFelles(
+                    form,
+                    "serviceCode" to form["scode"].toString(),
+                    "serviceEdition" to form["sedit"].toString(),
+                )
+                executeGraphql(
+                    nyKalenderavtale(
+                        variables.keys.toList(),
+                        mottaker = """
+                                                altinn: {
+                                                    serviceCode: ${'$'}serviceCode
+                                                    serviceEdition: ${'$'}serviceEdition
+                                                }
+                                            """
+                    ),
+                    variables = variables
+                )
+            }
+            handleForm("/opprett_kalenderavtale_digisyfo") { form ->
+                val variables = kalenderavtaleFelles(
+                    form,
+                    "fnrLeder" to form["fnrleder"].toString(),
+                    "fnrSykmeldt" to form["fnrsyk"].toString(),
+                )
+                executeGraphql(
+                    nyKalenderavtale(
+                        variables.keys.toList(),
+                        mottaker = """
+                                                    naermesteLeder: {
+                                                        naermesteLederFnr: ${'$'}fnrLeder
+                                                        ansattFnr: ${'$'}fnrSykmeldt
+                                                    }
+                                                """
+                    ),
+                    variables = variables
+                )
+            }
 
             handleForm("/opprett_sak_servicecode") { form ->
                 opprettNySak(
@@ -422,12 +480,13 @@ val sendPage: String =
                     background-color: #92cc41;
                   }
                   
-                  #beskjed_tab, #oppgave_tab, #felles_tab, #sak_tab {
+                  #beskjed_tab, #oppgave_tab, #kalenderavtale_tab, #felles_tab, #sak_tab {
                     display: none;
                   }
                   
                   #beskjed:checked ~ #beskjed_tab,
                   #oppgave:checked ~ #oppgave_tab,
+                  #kalenderavtale:checked ~ #kalenderavtale_tab,
                   #felles:checked ~ #felles_tab,
                   #sak:checked ~ #sak_tab {
                         display: block;
@@ -441,6 +500,9 @@ val sendPage: String =
                 
                 <input type="radio" id="oppgave" name="tab" style='display: none'>
                 <label class="nes-btn" for="oppgave">Oppgave</label>
+                
+                <input type="radio" id="kalenderavtale" name="tab" style='display: none'>
+                <label class="nes-btn" for="kalenderavtale">Kalenderavtale</label>
                 
                 <input type="radio" id="felles" name="tab" style='display: none'>
                 <label class="nes-btn" for="felles">Felles</label>
@@ -533,6 +595,46 @@ val sendPage: String =
                 ${inputs("id", "id")}
                 ${inputs("nyFrist", "nyFrist", LocalDate.now().toString())}
             """
+        }
+    }
+                </section>
+                
+                <section id="kalenderavtale_tab" class="nes-container" style='overflow: scroll'>
+                    <h1>Opprett kalenderavtale</h1>
+                     ${
+        inputSection("Mottakere: altinn-tjeneste", "/opprett_kalenderavtale_altinn") {
+            """
+                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                        ${inputs("scode", "Service code", "4936")}
+                        ${inputs("sedit", "Service edition", "1")}
+                        ${inputs("tekst", "Tekst", "Dette er en test-melding")}
+                        ${inputs("url", "url", "https://dev.nav.no")}
+                        ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
+                        ${inputs("start_tidspunkt", "Starttidspunkt YYYY-MM-DDTHH:MM:SS", "${LocalDateTime.now().plusDays(1)}")}
+                        ${inputs("slutt_tidspunkt", "Sluttidspunkt YYYY-MM-DDTHH:MM:SS", "")}
+                        ${inputs("adresse", "adresse", "")}
+                        ${inputs("postnummer", "postnummer", "")}
+                        ${inputs("poststed", "poststed", "")}
+                        ${inputs("erDigitalt", "digitalt?", "")}
+                        """
+        }
+    }
+                    ${
+        inputSection("Mottakere: naermeste leder", "/opprett_kalenderavtale_digisyfo") {
+            """
+                        ${inputs("vnr", "Virksomhetsnummer", "910825526")}
+                        ${inputs("fnrleder", "Fnr leder")}
+                        ${inputs("fnrsyk", "Fnr sykmeldt")}
+                        ${inputs("tekst", "Tekst", "Dette er en test-melding")}
+                        ${inputs("url", "url", "https://dev.nav.no")}
+                        ${inputs("grupperingsid", "grupperingsid", "${UUID.randomUUID()}")}
+                        ${inputs("start_tidspunkt", "Starttidspunkt YYYY-MM-DDTHH:MM:SS", "")}
+                        ${inputs("slutt_tidspunkt", "Sluttidspunkt YYYY-MM-DDTHH:MM:SS", "")}
+                        ${inputs("adresse", "adresse", "")}
+                        ${inputs("postnummer", "postnummer", "")}
+                        ${inputs("poststed", "poststed", "")}
+                        ${inputs("erDigitalt", "digitalt?", "")}
+                        """
         }
     }
                 </section>
@@ -712,6 +814,40 @@ fun nyBeskjed(vars: List<String>, mottaker: String): String =
             ) {
                 __typename
                 ... on NyBeskjedVellykket {
+                    id
+                }
+                ... on Error {
+                    feilmelding
+                }
+            }
+        }
+    """
+
+fun nyKalenderavtale(vars: List<String>, mottaker: String): String =
+    // language=GraphQL
+    """
+        mutation nyKalenderavtale(${vars.graphQLParameters()}) {
+            nyKalenderavtale(
+                mottakere: [
+                    {
+                        $mottaker
+                    }
+                ]
+                eksternId: "${java.util.UUID.randomUUID()}"
+                virksomhetsnummer: ${'$'}vnr
+                ${if ("grupperingsid" in vars) "grupperingsid: ${'$'}grupperingsid" else ""}
+                merkelapp: "fager"
+                tekst: ${'$'}tekst
+                lenke: ${'$'}url
+                ${if ("startTidspunkt" in vars) "startTidspunkt: ${'$'}startTidspunkt" else ""}
+                ${if ("sluttTidspunkt" in vars) "sluttTidspunkt: ${'$'}sluttTidspunkt" else ""}
+                ${if ("erDigitalt" in vars) "erDigitalt: true" else ""}
+                ${if (vars.containsAll(listOf("adresse", "postnummer", "poststed"))) {
+                        "lokasjon: { adresse: ${'$'}adresse postnummer: ${'$'}postnummer poststed: ${'$'}poststed }" 
+                } else ""}
+            ) {
+                __typename
+                ... on NyKalenderavtaleVellykket {
                     id
                 }
                 ... on Error {
