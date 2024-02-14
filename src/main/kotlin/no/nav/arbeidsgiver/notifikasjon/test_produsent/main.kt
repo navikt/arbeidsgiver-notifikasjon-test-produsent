@@ -823,10 +823,14 @@ fun nyBeskjed(vars: List<String>, mottaker: String): String =
         }
     """
 
-fun nyKalenderavtale(vars: List<String>, mottaker: String): String =
+fun nyKalenderavtale(vars: List<String>, mottaker: String): String {
+    val varsWithOverrides = vars.graphQLParameters(mapOf(
+        "startTidspunkt" to "ISO8601LocalDateTime!",
+        "sluttTidspunkt" to "ISO8601LocalDateTime!",
+    ))
     // language=GraphQL
-    """
-        mutation nyKalenderavtale(${vars.graphQLParameters()}) {
+    return """
+        mutation nyKalenderavtale(${varsWithOverrides}) {
             nyKalenderavtale(
                 mottakere: [
                     {
@@ -856,6 +860,7 @@ fun nyKalenderavtale(vars: List<String>, mottaker: String): String =
             }
         }
     """
+}
 
 fun hardDeleteNotifikasjon(): String =
     // language=GraphQL
