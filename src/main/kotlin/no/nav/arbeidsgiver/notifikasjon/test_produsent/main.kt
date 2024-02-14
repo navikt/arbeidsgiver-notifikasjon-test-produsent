@@ -825,8 +825,8 @@ fun nyBeskjed(vars: List<String>, mottaker: String): String =
 
 fun nyKalenderavtale(vars: List<String>, mottaker: String): String {
     val varsWithOverrides = vars.graphQLParameters(mapOf(
-        "startTidspunkt" to "ISO8601LocalDateTime!",
-        "sluttTidspunkt" to "ISO8601LocalDateTime!",
+        "startTidspunkt" to "ISO8601DateTime!",
+        "sluttTidspunkt" to "ISO8601DateTime",
     ))
     // language=GraphQL
     return """
