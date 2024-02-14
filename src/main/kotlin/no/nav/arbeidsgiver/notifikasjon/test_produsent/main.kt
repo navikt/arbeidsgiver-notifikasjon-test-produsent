@@ -88,7 +88,7 @@ fun kalenderavtaleFelles(form: Parameters, vararg custom: Pair<String, String?>)
         "adresse" to form["adresse"]!!.ifBlank { null },
         "postnummer" to form["postnummer"]!!.ifBlank { null },
         "poststed" to form["poststed"]!!.ifBlank { null },
-        "erDigitalt" to form["erDigitalt"]!!.ifBlank { null },
+        "erDigitalt" to form["erDigitalt"]!!.ifBlank { null }.let { if (it != null) "true" else null },
         *custom,
     )
 }
@@ -827,6 +827,7 @@ fun nyKalenderavtale(vars: List<String>, mottaker: String): String {
     val varsWithOverrides = vars.graphQLParameters(mapOf(
         "startTidspunkt" to "ISO8601DateTime!",
         "sluttTidspunkt" to "ISO8601DateTime",
+        "erDigitalt" to "Boolean",
     ))
     // language=GraphQL
     return """
@@ -845,7 +846,7 @@ fun nyKalenderavtale(vars: List<String>, mottaker: String): String {
                 lenke: ${'$'}url
                 ${if ("startTidspunkt" in vars) "startTidspunkt: ${'$'}startTidspunkt" else ""}
                 ${if ("sluttTidspunkt" in vars) "sluttTidspunkt: ${'$'}sluttTidspunkt" else ""}
-                ${if ("erDigitalt" in vars) "erDigitalt: true" else ""}
+                ${if ("erDigitalt" in vars) "erDigitalt: ${'$'}erDigitalt" else ""}
                 ${if (vars.containsAll(listOf("adresse", "postnummer", "poststed"))) {
                         "lokasjon: { adresse: ${'$'}adresse postnummer: ${'$'}postnummer poststed: ${'$'}poststed }" 
                 } else ""}
