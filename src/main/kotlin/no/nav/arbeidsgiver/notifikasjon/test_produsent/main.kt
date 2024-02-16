@@ -831,6 +831,7 @@ fun nyKalenderavtale(vars: List<String>, mottaker: String): String {
         "startTidspunkt" to "ISO8601LocalDateTime!",
         "sluttTidspunkt" to "ISO8601LocalDateTime",
         "erDigitalt" to "Boolean",
+        "tilstand" to "KalenderavtaleTilstand"
     ))
     // language=GraphQL
     return """
