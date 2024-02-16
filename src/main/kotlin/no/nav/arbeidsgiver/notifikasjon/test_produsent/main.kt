@@ -89,7 +89,7 @@ fun kalenderavtaleFelles(form: Parameters, vararg custom: Pair<String, String?>)
         "postnummer" to form["postnummer"]!!.ifBlank { null },
         "poststed" to form["poststed"]!!.ifBlank { null },
         "erDigitalt" to form["erDigitalt"]!!.ifBlank { null }.let { if (it != null) "true" else null },
-        "avtaletilstand" to form["avtaletilstand"]!!.ifBlank {null},
+        "tilstand" to form["tilstand"]!!.ifBlank {null},
         *custom,
     )
 }
@@ -617,7 +617,7 @@ val sendPage: String =
                         ${inputs("postnummer", "postnummer", "")}
                         ${inputs("poststed", "poststed", "")}
                         ${inputs("erDigitalt", "digitalt?", "")}
-                        ${inputs("Avtaletilstand", "avtaletilstand", "VENTER_SVAR_FRA_ARBEIDSGIVER" )}
+                        ${inputs("tilstand", "tilstand", "VENTER_SVAR_FRA_ARBEIDSGIVER" )}
                         """
         }
     }
@@ -636,7 +636,7 @@ val sendPage: String =
                         ${inputs("postnummer", "postnummer", "")}
                         ${inputs("poststed", "poststed", "")}
                         ${inputs("erDigitalt", "digitalt?", "")}
-                        ${inputs("Avtaletilstand", "avtaletilstand", "VENTER_SVAR_FRA_ARBEIDSGIVER" )}
+                        ${inputs("tilstand", "tilstand", "VENTER_SVAR_FRA_ARBEIDSGIVER" )}
                         """
         }
     }
@@ -853,7 +853,7 @@ fun nyKalenderavtale(vars: List<String>, mottaker: String): String {
                 ${if (vars.containsAll(listOf("adresse", "postnummer", "poststed"))) {
                         "lokasjon: { adresse: ${'$'}adresse postnummer: ${'$'}postnummer poststed: ${'$'}poststed }" 
                 } else ""}
-                ${if (vars.contains("avtaletilstand")) "avtaletilstand: ${'$'}avtaletilstand" else ""}
+                ${if (vars.contains("tilstand")) "tilstand: ${'$'}tilstand" else ""}
             ) {
                 __typename
                 ... on NyKalenderavtaleVellykket {
